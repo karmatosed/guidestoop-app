@@ -19,6 +19,9 @@
 		B1000000000000000000000A /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001A /* LocalStore.swift */; };
 		B1000000000000000000000B /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001B /* SyncCoordinator.swift */; };
 		B1000000000000000000000C /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001C /* AppEnvironment.swift */; };
+		B1000000000000000000000D /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001D /* OnboardingView.swift */; };
+		B1000000000000000000000E /* FolderBookmarkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001E /* FolderBookmarkStore.swift */; };
+		B1000000000000000000000F /* AppSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001F /* AppSession.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +38,9 @@
 		B1000000000000000000001A /* LocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStore.swift; sourceTree = "<group>"; };
 		B1000000000000000000001B /* SyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinator.swift; sourceTree = "<group>"; };
 		B1000000000000000000001C /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		B1000000000000000000001D /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		B1000000000000000000001E /* FolderBookmarkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderBookmarkStore.swift; sourceTree = "<group>"; };
+		B1000000000000000000001F /* AppSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSession.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +69,7 @@
 			children = (
 				B10000000000000000000011 /* GuidestoopIOSApp.swift */,
 				B10000000000000000000012 /* ContentView.swift */,
+				B10000000000000000000045 /* Onboarding */,
 				B10000000000000000000043 /* Data */,
 				B10000000000000000000044 /* Services */,
 				B10000000000000000000013 /* Assets.xcassets */,
@@ -95,10 +102,20 @@
 		B10000000000000000000044 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				B1000000000000000000001F /* AppSession.swift */,
 				B1000000000000000000001B /* SyncCoordinator.swift */,
 				B1000000000000000000001C /* AppEnvironment.swift */,
+				B1000000000000000000001E /* FolderBookmarkStore.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		B10000000000000000000045 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000000000000000001D /* OnboardingView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -187,6 +204,9 @@
 				B1000000000000000000000A /* LocalStore.swift in Sources */,
 				B1000000000000000000000B /* SyncCoordinator.swift in Sources */,
 				B1000000000000000000000C /* AppEnvironment.swift in Sources */,
+				B1000000000000000000000D /* OnboardingView.swift in Sources */,
+				B1000000000000000000000E /* FolderBookmarkStore.swift in Sources */,
+				B1000000000000000000000F /* AppSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

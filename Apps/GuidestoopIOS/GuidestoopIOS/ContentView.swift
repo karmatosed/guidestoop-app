@@ -45,15 +45,15 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
-        .environmentObject(
-            AppEnvironment(
-                modelContext: try! ModelContainer(
-                    for: CachedTask.self,
-                    CachedProject.self,
-                    CachedDeletedTask.self,
-                    CachedOutboxEntry.self
-                ).mainContext
-            )
-        )
+    if let environment = try? AppEnvironment(
+        modelContext: try! ModelContainer(
+            for: CachedTask.self,
+            CachedProject.self,
+            CachedDeletedTask.self,
+            CachedOutboxEntry.self
+        ).mainContext
+    ) {
+        ContentView()
+            .environmentObject(environment)
+    }
 }

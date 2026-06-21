@@ -4,7 +4,7 @@ import SwiftData
 @main
 struct GuidestoopIOSApp: App {
     private let modelContainer: ModelContainer
-    @StateObject private var appEnvironment: AppEnvironment
+    @StateObject private var appSession: AppSession
 
     init() {
         let container: ModelContainer
@@ -19,16 +19,30 @@ struct GuidestoopIOSApp: App {
             fatalError("Failed to initialize SwiftData container: \(error.localizedDescription)")
         }
         modelContainer = container
-        _appEnvironment = StateObject(
-            wrappedValue: AppEnvironment(modelContext: container.mainContext)
-        )
+        _appSession = StateObject(wrappedValue: AppSession(modelContainer: container))
     }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(appEnvironment)
+            RootView()
+                .environmentObject(appSession)
         }
         .modelContainer(modelContainer)
+    }
+}
+
+private struct RootView: View {
+    @EnvironmentObject private var appSession: AppSession
+
+    var body: some View {
+        switch appSession.phase {
+        case .onboarding:
+            OnboardingView {
+                appSession.finishOnboarding()
+            }
+        case .ready(let environment):
+            ContentView()
+                .environmentObject(environment)
+        }
     }
 }

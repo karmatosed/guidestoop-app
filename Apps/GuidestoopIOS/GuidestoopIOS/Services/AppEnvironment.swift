@@ -8,17 +8,9 @@ final class AppEnvironment: ObservableObject {
     let syncCoordinator: SyncCoordinator
     let folderURL: URL
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext) throws {
         localStore = LocalStore(modelContext: modelContext)
-
-        if let folder = try? ICloudAdapter.defaultFolderURL() {
-            folderURL = folder
-        } else {
-            folderURL = FileManager.default
-                .urls(for: .documentDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("Guidestoop", isDirectory: true)
-        }
-
+        folderURL = try FolderBookmarkStore.resolve()
         syncCoordinator = SyncCoordinator(localStore: localStore, folderURL: folderURL)
     }
 }
