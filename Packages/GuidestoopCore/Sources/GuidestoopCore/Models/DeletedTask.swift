@@ -13,6 +13,32 @@ public struct DeletedTask: Codable, Identifiable, Equatable, Sendable {
     public var deletedAt: String
     public var body: String
 
+    public init(
+        id: String,
+        title: String,
+        status: TaskStatus,
+        scheduled: String? = nil,
+        duration: Int? = nil,
+        project: String? = nil,
+        tags: [String] = [],
+        created: String,
+        updated: String,
+        deletedAt: String,
+        body: String = ""
+    ) {
+        self.id = id
+        self.title = title
+        self.status = status
+        self.scheduled = scheduled
+        self.duration = duration
+        self.project = project
+        self.tags = tags
+        self.created = created
+        self.updated = updated
+        self.deletedAt = deletedAt
+        self.body = body
+    }
+
     public var asTask: Task {
         Task(
             id: id, title: title, status: status,
