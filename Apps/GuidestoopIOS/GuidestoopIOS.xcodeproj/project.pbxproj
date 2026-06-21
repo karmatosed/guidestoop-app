@@ -12,6 +12,13 @@
 		B10000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* Assets.xcassets */; };
 		B10000000000000000000004 /* GuidestoopCore in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000031 /* GuidestoopCore */; };
 		B10000000000000000000005 /* GuidestoopStorage in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000032 /* GuidestoopStorage */; };
+		B10000000000000000000006 /* CachedTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016 /* CachedTask.swift */; };
+		B10000000000000000000007 /* CachedProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000017 /* CachedProject.swift */; };
+		B10000000000000000000008 /* CachedDeletedTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000018 /* CachedDeletedTask.swift */; };
+		B10000000000000000000009 /* CachedOutboxEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000019 /* CachedOutboxEntry.swift */; };
+		B1000000000000000000000A /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001A /* LocalStore.swift */; };
+		B1000000000000000000000B /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001B /* SyncCoordinator.swift */; };
+		B1000000000000000000000C /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001C /* AppEnvironment.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +28,13 @@
 		B10000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10000000000000000000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10000000000000000000015 /* GuidestoopIOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GuidestoopIOS.entitlements; sourceTree = "<group>"; };
+		B10000000000000000000016 /* CachedTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedTask.swift; sourceTree = "<group>"; };
+		B10000000000000000000017 /* CachedProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedProject.swift; sourceTree = "<group>"; };
+		B10000000000000000000018 /* CachedDeletedTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedDeletedTask.swift; sourceTree = "<group>"; };
+		B10000000000000000000019 /* CachedOutboxEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedOutboxEntry.swift; sourceTree = "<group>"; };
+		B1000000000000000000001A /* LocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStore.swift; sourceTree = "<group>"; };
+		B1000000000000000000001B /* SyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinator.swift; sourceTree = "<group>"; };
+		B1000000000000000000001C /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +63,8 @@
 			children = (
 				B10000000000000000000011 /* GuidestoopIOSApp.swift */,
 				B10000000000000000000012 /* ContentView.swift */,
+				B10000000000000000000043 /* Data */,
+				B10000000000000000000044 /* Services */,
 				B10000000000000000000013 /* Assets.xcassets */,
 				B10000000000000000000014 /* Info.plist */,
 				B10000000000000000000015 /* GuidestoopIOS.entitlements */,
@@ -62,6 +78,27 @@
 				B10000000000000000000010 /* GuidestoopIOS.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B10000000000000000000043 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000016 /* CachedTask.swift */,
+				B10000000000000000000017 /* CachedProject.swift */,
+				B10000000000000000000018 /* CachedDeletedTask.swift */,
+				B10000000000000000000019 /* CachedOutboxEntry.swift */,
+				B1000000000000000000001A /* LocalStore.swift */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		B10000000000000000000044 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000000000000000001B /* SyncCoordinator.swift */,
+				B1000000000000000000001C /* AppEnvironment.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -143,6 +180,13 @@
 			files = (
 				B10000000000000000000001 /* GuidestoopIOSApp.swift in Sources */,
 				B10000000000000000000002 /* ContentView.swift in Sources */,
+				B10000000000000000000006 /* CachedTask.swift in Sources */,
+				B10000000000000000000007 /* CachedProject.swift in Sources */,
+				B10000000000000000000008 /* CachedDeletedTask.swift in Sources */,
+				B10000000000000000000009 /* CachedOutboxEntry.swift in Sources */,
+				B1000000000000000000000A /* LocalStore.swift in Sources */,
+				B1000000000000000000000B /* SyncCoordinator.swift in Sources */,
+				B1000000000000000000000C /* AppEnvironment.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
