@@ -237,10 +237,14 @@ The UI reads from SwiftData cache, not the folder. Sync runs in the background a
 ### Strategy
 
 1. **Metadata-first listing** — enumerate paths + filesystem modification dates without reading file contents.
-2. **Selective reads** — read and parse a `.md` file only when it is new, filesystem-modified since last manifest entry, or targeted by outbox.
-3. **File manifest in `guidestoop.json`** — disposable cache of last-seen `updated` + `modifiedAt` per path.
-4. **Unchanged files** — keep local SwiftData copy; do not re-read from disk.
-5. **Deletion reconciliation** — compare remote path listing vs cache.
+2. **Selective reads** — read and parse a `.md` file only when:
+   - it is new (not in local cache),
+   - filesystem `modifiedAt` is newer than the last-seen entry in the manifest, or
+   - it is targeted by a pending outbox operation.
+3. **File manifest in `guidestoop.json`** — disposable cache of last-seen `updated` + `modifiedAt` per path (rebuild anytime from files).
+4. **Unchanged files** — keep the local SwiftData copy (including body); do not re-read from disk.
+5. **Deletion reconciliation** — compare remote path listing vs cache; remote deletions propagate unless local still has pending changes to push.
+6. **Trash folder** — can be synced less frequently (on Trash tab open or manual sync).
 
 ### `guidestoop.json` manifest (extended)
 
@@ -258,7 +262,21 @@ The UI reads from SwiftData cache, not the folder. Sync runs in the background a
 }
 ```
 
-Dropbox uses API cursors; iCloud has no delta API — the manifest substitutes for cursor-based incremental sync.
+Dropbox uses API cursors for deltas; iCloud has no delta API, so the manifest substitutes for cursor-based incremental sync.
+
+### Scaling expectations
+
+| Task count | Expected sync (typical, few changes) |
+|---|---|
+| ~100 | <100ms metadata + changed reads |
+| ~1,000 | ~200ms metadata + O(changes) reads |
+| ~5,000+ | Consider folder sharding (future); manifest keeps daily sync fast |
+
+### Future optimizations (if needed)
+
+- Frontmatter-only parse during sync (body loaded on detail open)
+- `/tasks/{aa}/{uuid}.md` sharding for 5k+ tasks
+- `NSFilePresenter` single-file incremental updates (implemented in v1 via `ICloudFolderWatcher`)
 
 ---
 
