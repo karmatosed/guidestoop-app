@@ -26,6 +26,11 @@
 		B100000000000000000000F2 /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A2 /* AppShellView.swift */; };
 		B100000000000000000000F3 /* SyncStatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A3 /* SyncStatusBadge.swift */; };
 		B100000000000000000000F4 /* ConflictBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A4 /* ConflictBannerView.swift */; };
+		B100000000000000000000F5 /* TasksListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A5 /* TasksListView.swift */; };
+		B100000000000000000000F6 /* TaskRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A6 /* TaskRowView.swift */; };
+		B100000000000000000000F7 /* QuickAddField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A7 /* QuickAddField.swift */; };
+		B100000000000000000000F8 /* TagChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A8 /* TagChipView.swift */; };
+		B100000000000000000000F9 /* TaskDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A9 /* TaskDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +54,11 @@
 		B100000000000000000000A2 /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
 		B100000000000000000000A3 /* SyncStatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusBadge.swift; sourceTree = "<group>"; };
 		B100000000000000000000A4 /* ConflictBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictBannerView.swift; sourceTree = "<group>"; };
+		B100000000000000000000A5 /* TasksListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksListView.swift; sourceTree = "<group>"; };
+		B100000000000000000000A6 /* TaskRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskRowView.swift; sourceTree = "<group>"; };
+		B100000000000000000000A7 /* QuickAddField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAddField.swift; sourceTree = "<group>"; };
+		B100000000000000000000A8 /* TagChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagChipView.swift; sourceTree = "<group>"; };
+		B100000000000000000000A9 /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -139,6 +149,8 @@
 			isa = PBXGroup;
 			children = (
 				B100000000000000000000A2 /* AppShellView.swift */,
+				B100000000000000000000A5 /* TasksListView.swift */,
+				B100000000000000000000A9 /* TaskDetailView.swift */,
 				B10000000000000000000048 /* Components */,
 			);
 			path = Views;
@@ -149,6 +161,9 @@
 			children = (
 				B100000000000000000000A3 /* SyncStatusBadge.swift */,
 				B100000000000000000000A4 /* ConflictBannerView.swift */,
+				B100000000000000000000A6 /* TaskRowView.swift */,
+				B100000000000000000000A7 /* QuickAddField.swift */,
+				B100000000000000000000A8 /* TagChipView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -245,6 +260,11 @@
 				B100000000000000000000F2 /* AppShellView.swift in Sources */,
 				B100000000000000000000F3 /* SyncStatusBadge.swift in Sources */,
 				B100000000000000000000F4 /* ConflictBannerView.swift in Sources */,
+				B100000000000000000000F5 /* TasksListView.swift in Sources */,
+				B100000000000000000000F6 /* TaskRowView.swift in Sources */,
+				B100000000000000000000F7 /* QuickAddField.swift in Sources */,
+				B100000000000000000000F8 /* TagChipView.swift in Sources */,
+				B100000000000000000000F9 /* TaskDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

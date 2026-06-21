@@ -31,7 +31,7 @@ private enum AppTab: String, CaseIterable, Identifiable {
 struct AppShellView: View {
     @EnvironmentObject private var appEnvironment: AppEnvironment
     @State private var selectedTab: AppTab = .list
-    @State private var showSearch = false
+    @State private var isListSearchPresented = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -51,11 +51,6 @@ struct AppShellView: View {
         .preferredColorScheme(.dark)
         .task {
             await appEnvironment.syncCoordinator.syncNow()
-        }
-        .alert("Search", isPresented: $showSearch) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Search arrives with the task list view.")
         }
     }
 
@@ -84,7 +79,8 @@ struct AppShellView: View {
             }
 
             Button {
-                showSearch = true
+                selectedTab = .list
+                isListSearchPresented = true
             } label: {
                 Image(systemName: "magnifyingglass")
                     .font(.body.weight(.medium))
@@ -102,11 +98,7 @@ struct AppShellView: View {
     private var tabContent: some View {
         switch selectedTab {
         case .list:
-            ShellPlaceholderView(
-                title: "Tasks",
-                subtitle: "List view coming next",
-                taskCount: (try? appEnvironment.localStore.taskCount()) ?? 0
-            )
+            TasksListView(isSearchPresented: $isListSearchPresented)
         case .kanban:
             ShellPlaceholderView(title: "Kanban", subtitle: "Columns: inbox → done")
         case .day:
