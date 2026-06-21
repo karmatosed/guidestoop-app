@@ -2,6 +2,8 @@ import Foundation
 import GuidestoopCore
 
 public final class ICloudAdapter: StorageAdapter, @unchecked Sendable {
+    public static let containerIdentifier = "iCloud.com.guidestoop.ios"
+
     private let rootURL: URL
     private let coordinator = NSFileCoordinator()
     private let fm = FileManager.default
@@ -11,7 +13,9 @@ public final class ICloudAdapter: StorageAdapter, @unchecked Sendable {
     }
 
     public static func defaultFolderURL() throws -> URL {
-        guard let container = FileManager.default.url(forUbiquityContainerIdentifier: nil) else {
+        guard let container = FileManager.default.url(
+            forUbiquityContainerIdentifier: containerIdentifier
+        ) else {
             throw StorageError.folderNotConfigured
         }
         return container.appendingPathComponent("Documents/Guidestoop", isDirectory: true)

@@ -10,42 +10,47 @@ struct TaskRowView: View {
             Button(action: onToggleDone) {
                 Image(systemName: task.status == .done ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(task.status == .done ? GuidestoopTheme.accent : GuidestoopTheme.textSecondary)
+                    .symbolRenderingMode(.monochrome)
+                    .foregroundStyle(task.status == .done ? GuidestoopTheme.textPrimary : GuidestoopTheme.textSecondary)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.borderless)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(task.title)
-                    .font(.body)
-                    .foregroundStyle(task.status == .done ? GuidestoopTheme.textSecondary : GuidestoopTheme.textPrimary)
-                    .strikethrough(task.status == .done, color: GuidestoopTheme.textSecondary)
-
-                HStack(spacing: 8) {
-                    if let project = task.project, !project.isEmpty {
-                        Text(project)
-                            .font(.caption)
-                            .foregroundStyle(GuidestoopTheme.textSecondary)
+                HStack(spacing: 6) {
+                    if task.highPriority {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(GuidestoopTheme.textPrimary)
+                            .accessibilityLabel("High priority")
                     }
+                    Text(task.title)
+                        .font(GuidestoopTypography.body)
+                        .foregroundStyle(task.status == .done ? .secondary : .primary)
+                        .strikethrough(task.status == .done, color: .secondary)
+                }
 
-                    if let scheduled = task.scheduled, !scheduled.isEmpty {
-                        Text(formatScheduled(scheduled))
-                            .font(.caption)
-                            .foregroundStyle(GuidestoopTheme.textSecondary)
-                    }
-
-                    if !task.tags.isEmpty {
-                        Text(task.tags.joined(separator: ", "))
-                            .font(.caption)
-                            .foregroundStyle(GuidestoopTheme.accent.opacity(0.85))
-                            .lineLimit(1)
-                    }
+                if !metadataParts.isEmpty {
+                    Text(metadataParts)
+                        .font(GuidestoopTypography.meta)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
-
-            Spacer(minLength: 0)
         }
-        .padding(.vertical, 8)
-        .contentShape(Rectangle())
+    }
+
+    private var metadataParts: String {
+        var parts: [String] = []
+        if let project = task.project, !project.isEmpty {
+            parts.append(project)
+        }
+        if let scheduled = task.scheduled, !scheduled.isEmpty {
+            parts.append(formatScheduled(scheduled))
+        }
+        if !task.tags.isEmpty {
+            parts.append(task.tags.joined(separator: ", "))
+        }
+        return parts.joined(separator: " · ")
     }
 
     private func formatScheduled(_ scheduled: String) -> String {
@@ -67,24 +72,21 @@ struct DeletedTaskRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(deletedTask.title)
-                .font(.body)
-                .foregroundStyle(GuidestoopTheme.textPrimary)
+                .font(GuidestoopTypography.body)
 
             Text(purgeLabel)
-                .font(.caption)
-                .foregroundStyle(GuidestoopTheme.textSecondary)
+                .font(GuidestoopTypography.meta)
+                .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var purgeLabel: String {
         if daysUntilPurge <= 0 {
-            return "Expires soon"
+            return "expires soon"
         }
         if daysUntilPurge == 1 {
-            return "Purges in 1 day"
+            return "purges in 1d"
         }
-        return "Purges in \(daysUntilPurge) days"
+        return "purges in \(daysUntilPurge)d"
     }
 }

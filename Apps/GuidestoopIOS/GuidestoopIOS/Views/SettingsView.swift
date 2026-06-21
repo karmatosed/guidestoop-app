@@ -2,51 +2,24 @@ import SwiftUI
 import UniformTypeIdentifiers
 import GuidestoopCore
 
-enum AppearancePreference: String, CaseIterable, Identifiable {
-    case system
-    case light
-    case dark
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .system: return "System"
-        case .light: return "Light"
-        case .dark: return "Dark"
-        }
-    }
-
-    var colorScheme: ColorScheme? {
-        switch self {
-        case .system: return nil
-        case .light: return .light
-        case .dark: return .dark
-        }
-    }
-}
-
 struct SettingsView: View {
     @EnvironmentObject private var appEnvironment: AppEnvironment
     @EnvironmentObject private var appSession: AppSession
-    @AppStorage("guidestoop.appearance") private var appearanceRaw = AppearancePreference.system.rawValue
+    @EnvironmentObject private var appearanceSettings: AppearanceSettings
+    @EnvironmentObject private var energySettings: EnergySettings
 
     var onOpenTrash: (() -> Void)?
 
     @State private var showFolderPicker = false
     @State private var folderError: String?
 
-    private var appearance: AppearancePreference {
-        AppearancePreference(rawValue: appearanceRaw) ?? .system
-    }
-
     var body: some View {
         List {
             Section("Storage") {
                 LabeledContent("Provider", value: "iCloud Drive")
                 Text(appEnvironment.folderURL.path)
-                    .font(.caption)
-                    .foregroundStyle(GuidestoopTheme.textSecondary)
+                    .font(GuidestoopTypography.meta)
+                    .foregroundStyle(.secondary)
                 Button("Change Folder") {
                     showFolderPicker = true
                 }
@@ -64,10 +37,27 @@ struct SettingsView: View {
                 LabeledContent("Pending", value: "\(appEnvironment.syncCoordinator.outboxCount)")
             }
 
+            Section("Energy") {
+                ForEach(EnergyLevel.allCases) { level in
+                    Stepper(
+                        value: Binding(
+                            get: { energySettings.taskLimit(for: level) },
+                            set: { energySettings.setLimit($0, for: level) }
+                        ),
+                        in: 1 ... 20
+                    ) {
+                        Text("\(level.title): \(energySettings.taskLimit(for: level)) tasks")
+                    }
+                }
+                Text("Set today's energy on the Now tab. Limits apply to how many tasks show in your daily focus.")
+                    .font(GuidestoopTypography.meta)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Appearance") {
-                Picker("Theme", selection: $appearanceRaw) {
+                Picker("Theme", selection: $appearanceSettings.preference) {
                     ForEach(AppearancePreference.allCases) { option in
-                        Text(option.title).tag(option.rawValue)
+                        Text(option.title).tag(option)
                     }
                 }
             }
@@ -82,10 +72,11 @@ struct SettingsView: View {
                 Button("Switch to GitHub") {}
                     .disabled(true)
                 Text("Coming in a future update")
-                    .font(.caption)
-                    .foregroundStyle(GuidestoopTheme.textSecondary)
+                    .font(GuidestoopTypography.meta)
+                    .foregroundStyle(.secondary)
             }
         }
+        .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(GuidestoopTheme.background)
         .fileImporter(
@@ -141,8 +132,9 @@ struct ConflictsListView: View {
         NavigationStack {
             List {
                 if conflictPaths.isEmpty {
-                    Text("No conflicts")
-                        .foregroundStyle(GuidestoopTheme.textSecondary)
+                    ContentUnavailableView {
+                        Label("No conflicts", systemImage: "checkmark.circle")
+                    }
                 } else {
                     ForEach(conflictPaths, id: \.self) { path in
                         Button {
@@ -160,6 +152,7 @@ struct ConflictsListView: View {
                     }
                 }
             }
+            .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
             .background(GuidestoopTheme.background)
             .navigationTitle("Conflicts")
@@ -182,7 +175,6 @@ struct ConflictsListView: View {
                 Text(errorMessage ?? "")
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     private func displayName(for path: String) -> String {
@@ -216,10 +208,10 @@ struct ConflictDetailView: View {
                     }
                 } else {
                     ProgressView("Loading…")
+                        .tint(GuidestoopTheme.accent)
                 }
             }
-            .background(GuidestoopTheme.background)
-            .foregroundStyle(GuidestoopTheme.textPrimary)
+            .guidestoopScreenStyle()
             .navigationTitle("Resolve conflict")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -241,7 +233,7 @@ struct ConflictDetailView: View {
                 }
             }
             .task {
-                loadConflict()
+                await loadConflict()
             }
             .alert("Error", isPresented: Binding(
                 get: { errorMessage != nil },
@@ -252,7 +244,6 @@ struct ConflictDetailView: View {
                 Text(errorMessage ?? "")
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     private func conflictColumn(title: String, task: GuidestoopCore.Task) -> some View {
@@ -276,9 +267,9 @@ struct ConflictDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
-    private func loadConflict() {
+    private func loadConflict() async {
         do {
-            conflict = try appEnvironment.syncCoordinator.loadConflict(at: conflictPath)
+            conflict = try await appEnvironment.syncCoordinator.loadConflict(at: conflictPath)
         } catch {
             errorMessage = error.localizedDescription
         }

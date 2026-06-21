@@ -1,71 +1,62 @@
 import SwiftUI
-import SwiftData
 import GuidestoopCore
 
 struct DayTimelineView: View {
     @EnvironmentObject private var appEnvironment: AppEnvironment
-    @Query(sort: \CachedTask.updated, order: .reverse) private var cachedTasks: [CachedTask]
 
+    @State private var tasks: [Task] = []
     @State private var selectedDate = Date()
     @State private var saveError: String?
-
-    private var allTasks: [Task] {
-        cachedTasks.map { $0.toTask() }
-    }
 
     private var dateYmd: String {
         TaskFilters.localDateYmd(date: selectedDate)
     }
 
     private var timeline: (scheduled: [Task], focus: [Task]) {
-        TaskFilters.dayTimelineTasks(allTasks, dateYmd: dateYmd)
+        TaskFilters.dayTimelineTasks(tasks, dateYmd: dateYmd)
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            DatePicker("Day", selection: $selectedDate, displayedComponents: .date)
-                .datePickerStyle(.compact)
-                .labelsHidden()
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+        List {
+            Section {
+                DatePicker("Day", selection: $selectedDate, displayedComponents: .date)
+            }
 
-            List {
-                Section {
-                    QuickAddField(placeholder: "Add for \(dateYmd)…") { title in
-                        addScheduledTask(title: title)
-                    }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
+            Section {
+                QuickAddField(placeholder: "Add for \(dateYmd)…") { title in
+                    addScheduledTask(title: title)
                 }
+            }
 
-                if !timeline.focus.isEmpty {
-                    Section("Focus") {
-                        ForEach(timeline.focus) { task in
-                            TimelineRowView(task: task)
-                                .listRowBackground(Color.clear)
-                        }
-                    }
-                }
-
-                Section("Scheduled") {
-                    if timeline.scheduled.isEmpty {
-                        Text("Nothing scheduled")
-                            .font(.subheadline)
-                            .foregroundStyle(GuidestoopTheme.textSecondary)
-                            .listRowBackground(Color.clear)
-                    } else {
-                        ForEach(timeline.scheduled) { task in
-                            TimelineRowView(task: task)
-                                .listRowBackground(Color.clear)
-                        }
+            if !timeline.focus.isEmpty {
+                Section("Focus") {
+                    ForEach(timeline.focus) { task in
+                        TimelineRowView(task: task)
                     }
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
+
+            Section("Scheduled") {
+                if timeline.scheduled.isEmpty {
+                    ContentUnavailableView {
+                        Label("Nothing scheduled", systemImage: "calendar")
+                    }
+                } else {
+                    ForEach(timeline.scheduled) { task in
+                        TimelineRowView(task: task)
+                    }
+                }
+            }
         }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
         .background(GuidestoopTheme.background)
+        .guidestoopSyncToolbar(
+            isSyncing: appEnvironment.syncCoordinator.isSyncing,
+            outboxCount: appEnvironment.syncCoordinator.outboxCount
+        ) {
+            Swift.Task { await appEnvironment.syncCoordinator.syncNow() }
+        }
         .alert("Could not save", isPresented: Binding(
             get: { saveError != nil },
             set: { if !$0 { saveError = nil } }
@@ -74,6 +65,14 @@ struct DayTimelineView: View {
         } message: {
             Text(saveError ?? "")
         }
+        .task { reloadTasks() }
+        .onChange(of: appEnvironment.syncCoordinator.lastSyncedAt) { _, _ in
+            reloadTasks()
+        }
+    }
+
+    private func reloadTasks() {
+        tasks = (try? appEnvironment.localStore.allCachedTasks()) ?? []
     }
 
     private func addScheduledTask(title: String) {
@@ -85,7 +84,8 @@ struct DayTimelineView: View {
     private func save(_ task: Task) {
         do {
             try appEnvironment.localStore.saveTask(task)
-            Swift.Task { await appEnvironment.syncCoordinator.syncNow() }
+            reloadTasks()
+            appEnvironment.syncCoordinator.noteLocalChange()
         } catch {
             saveError = error.localizedDescription
         }
@@ -100,37 +100,33 @@ private struct TimelineRowView: View {
             VStack(alignment: .leading, spacing: 2) {
                 if let timeLabel = scheduledTimeLabel {
                     Text(timeLabel)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(GuidestoopTheme.accent)
+                        .font(GuidestoopTypography.meta)
+                        .foregroundStyle(GuidestoopTheme.textSecondary)
                 }
                 if let durationLabel = durationLabel {
                     Text(durationLabel)
-                        .font(.caption2)
-                        .foregroundStyle(GuidestoopTheme.textSecondary)
+                        .font(GuidestoopTypography.meta)
+                        .foregroundStyle(.secondary)
                 }
             }
             .frame(width: 72, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
-                    .font(.body)
-                    .foregroundStyle(GuidestoopTheme.textPrimary)
+                    .font(GuidestoopTypography.body)
 
                 if let project = task.project, !project.isEmpty {
                     Text(project)
-                        .font(.caption)
-                        .foregroundStyle(GuidestoopTheme.textSecondary)
+                        .font(GuidestoopTypography.meta)
+                        .foregroundStyle(.secondary)
                 }
             }
-
-            Spacer(minLength: 0)
         }
-        .padding(.vertical, 6)
     }
 
     private var scheduledTimeLabel: String? {
         guard let scheduled = task.scheduled else { return nil }
-        if scheduled.count == 10 { return "All day" }
+        if scheduled.count == 10 { return "all day" }
         let parts = scheduled.split(separator: "T")
         guard parts.count > 1 else { return scheduled }
         return String(parts[1].prefix(5))

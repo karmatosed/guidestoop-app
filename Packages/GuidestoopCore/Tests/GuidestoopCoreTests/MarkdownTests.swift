@@ -70,6 +70,14 @@ final class MarkdownTests: XCTestCase {
         }
     }
 
+    func testRoundTripHighPriorityTask() throws {
+        var high = Self.sampleTask
+        high.highPriority = true
+        let md = try TaskMarkdown.serialize(high)
+        XCTAssertTrue(md.contains("highPriority: true"))
+        XCTAssertEqual(try TaskMarkdown.parse(md), high)
+    }
+
     func testDeletedTaskRoundTrip() throws {
         let task = Self.sampleTask
         let deletedAt = "2026-05-23T10:00:00.000Z"

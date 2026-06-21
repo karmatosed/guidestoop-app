@@ -87,4 +87,39 @@ public enum TaskFilters {
         }
         return (scheduled, focus)
     }
+
+    public static func todayCandidates(
+        _ tasks: [Task],
+        todayYmd: String,
+        calendar: Calendar = .current
+    ) -> [Task] {
+        filterByTab(tasks, tab: .today, todayYmd: todayYmd, calendar: calendar)
+    }
+
+    public static func nowTasks(
+        _ tasks: [Task],
+        todayYmd: String,
+        limit: Int,
+        calendar: Calendar = .current
+    ) -> [Task] {
+        let candidates = todayCandidates(tasks, todayYmd: todayYmd, calendar: calendar)
+        return sortForNow(candidates).prefix(max(limit, 0)).map { $0 }
+    }
+
+    public static func todayFocusCount(
+        _ tasks: [Task],
+        todayYmd: String,
+        calendar: Calendar = .current
+    ) -> Int {
+        todayCandidates(tasks, todayYmd: todayYmd, calendar: calendar).count
+    }
+
+    public static func sortForNow(_ tasks: [Task]) -> [Task] {
+        tasks.sorted { lhs, rhs in
+            if lhs.highPriority != rhs.highPriority {
+                return lhs.highPriority && !rhs.highPriority
+            }
+            return lhs.updated > rhs.updated
+        }
+    }
 }

@@ -1,10 +1,11 @@
 import Foundation
+import GuidestoopStorage
 
 public final class ICloudFolderWatcher: NSObject, NSFilePresenter, @unchecked Sendable {
     public let presentedItemURL: URL?
     public let presentedItemOperationQueue = OperationQueue.main
 
-    private var debounceTask: Task<Void, Never>?
+    private var debounceTask: Swift.Task<Void, Never>?
     private let onChange: @Sendable () -> Void
 
     public init(folderURL: URL, onChange: @escaping @Sendable () -> Void) {
@@ -20,9 +21,9 @@ public final class ICloudFolderWatcher: NSObject, NSFilePresenter, @unchecked Se
 
     public func presentedItemDidChange() {
         debounceTask?.cancel()
-        debounceTask = Task {
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            guard !Task.isCancelled else { return }
+        debounceTask = Swift.Task {
+            try? await Swift.Task.sleep(nanoseconds: 1_000_000_000)
+            guard !Swift.Task.isCancelled else { return }
             onChange()
         }
     }

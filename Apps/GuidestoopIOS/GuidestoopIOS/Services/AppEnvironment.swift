@@ -1,5 +1,4 @@
 import Foundation
-import SwiftData
 import GuidestoopStorage
 
 @MainActor
@@ -8,8 +7,8 @@ final class AppEnvironment: ObservableObject {
     let syncCoordinator: SyncCoordinator
     let folderURL: URL
 
-    init(modelContext: ModelContext) throws {
-        localStore = LocalStore(modelContext: modelContext)
+    init() throws {
+        localStore = try LocalStore()
         folderURL = try FolderBookmarkStore.resolve()
         syncCoordinator = SyncCoordinator(localStore: localStore, folderURL: folderURL)
     }

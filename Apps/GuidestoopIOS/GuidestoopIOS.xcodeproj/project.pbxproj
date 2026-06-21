@@ -12,10 +12,6 @@
 		B10000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* Assets.xcassets */; };
 		B10000000000000000000004 /* GuidestoopCore in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000031 /* GuidestoopCore */; };
 		B10000000000000000000005 /* GuidestoopStorage in Frameworks */ = {isa = PBXBuildFile; productRef = B10000000000000000000032 /* GuidestoopStorage */; };
-		B10000000000000000000006 /* CachedTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016 /* CachedTask.swift */; };
-		B10000000000000000000007 /* CachedProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000017 /* CachedProject.swift */; };
-		B10000000000000000000008 /* CachedDeletedTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000018 /* CachedDeletedTask.swift */; };
-		B10000000000000000000009 /* CachedOutboxEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000019 /* CachedOutboxEntry.swift */; };
 		B1000000000000000000000A /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001A /* LocalStore.swift */; };
 		B1000000000000000000000B /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001B /* SyncCoordinator.swift */; };
 		B1000000000000000000000C /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001C /* AppEnvironment.swift */; };
@@ -31,10 +27,17 @@
 		B100000000000000000000F7 /* QuickAddField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A7 /* QuickAddField.swift */; };
 		B100000000000000000000F8 /* TagChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A8 /* TagChipView.swift */; };
 		B100000000000000000000F9 /* TaskDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A9 /* TaskDetailView.swift */; };
-		B100000000000000000000FA /* KanbanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AA /* KanbanView.swift */; };
 		B100000000000000000000FB /* DayTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AB /* DayTimelineView.swift */; };
 		B100000000000000000000FC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AC /* SettingsView.swift */; };
 		B100000000000000000000FD /* ConflictResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AD /* ConflictResolution.swift */; };
+		B100000000000000000000FE /* AppEnvironmentHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AE /* AppEnvironmentHolder.swift */; };
+		B100000000000000000000FF /* ReadyRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AF /* ReadyRootView.swift */; };
+		B10000000000000000000100 /* AddTaskBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000101 /* AddTaskBar.swift */; };
+		B10000000000000000000102 /* DirectSyncStorageAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000103 /* DirectSyncStorageAdapter.swift */; };
+		B10000000000000000000104 /* AppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000105 /* AppearanceSettings.swift */; };
+		B10000000000000000000106 /* LazyTabContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000107 /* LazyTabContent.swift */; };
+		B10000000000000000000108 /* NowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000109 /* NowView.swift */; };
+		B1000000000000000000010A /* EnergySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000010B /* EnergySettings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,10 +47,6 @@
 		B10000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10000000000000000000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10000000000000000000015 /* GuidestoopIOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GuidestoopIOS.entitlements; sourceTree = "<group>"; };
-		B10000000000000000000016 /* CachedTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedTask.swift; sourceTree = "<group>"; };
-		B10000000000000000000017 /* CachedProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedProject.swift; sourceTree = "<group>"; };
-		B10000000000000000000018 /* CachedDeletedTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedDeletedTask.swift; sourceTree = "<group>"; };
-		B10000000000000000000019 /* CachedOutboxEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedOutboxEntry.swift; sourceTree = "<group>"; };
 		B1000000000000000000001A /* LocalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStore.swift; sourceTree = "<group>"; };
 		B1000000000000000000001B /* SyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinator.swift; sourceTree = "<group>"; };
 		B1000000000000000000001C /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
@@ -63,10 +62,17 @@
 		B100000000000000000000A7 /* QuickAddField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAddField.swift; sourceTree = "<group>"; };
 		B100000000000000000000A8 /* TagChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagChipView.swift; sourceTree = "<group>"; };
 		B100000000000000000000A9 /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
-		B100000000000000000000AA /* KanbanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanView.swift; sourceTree = "<group>"; };
 		B100000000000000000000AB /* DayTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayTimelineView.swift; sourceTree = "<group>"; };
 		B100000000000000000000AC /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B100000000000000000000AD /* ConflictResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolution.swift; sourceTree = "<group>"; };
+		B100000000000000000000AE /* AppEnvironmentHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironmentHolder.swift; sourceTree = "<group>"; };
+		B100000000000000000000AF /* ReadyRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadyRootView.swift; sourceTree = "<group>"; };
+		B10000000000000000000101 /* AddTaskBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskBar.swift; sourceTree = "<group>"; };
+		B10000000000000000000103 /* DirectSyncStorageAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectSyncStorageAdapter.swift; sourceTree = "<group>"; };
+		B10000000000000000000105 /* AppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettings.swift; sourceTree = "<group>"; };
+		B10000000000000000000107 /* LazyTabContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyTabContent.swift; sourceTree = "<group>"; };
+		B10000000000000000000109 /* NowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowView.swift; sourceTree = "<group>"; };
+		B1000000000000000000010B /* EnergySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergySettings.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -117,10 +123,6 @@
 		B10000000000000000000043 /* Data */ = {
 			isa = PBXGroup;
 			children = (
-				B10000000000000000000016 /* CachedTask.swift */,
-				B10000000000000000000017 /* CachedProject.swift */,
-				B10000000000000000000018 /* CachedDeletedTask.swift */,
-				B10000000000000000000019 /* CachedOutboxEntry.swift */,
 				B1000000000000000000001A /* LocalStore.swift */,
 			);
 			path = Data;
@@ -131,9 +133,11 @@
 			children = (
 				B1000000000000000000001F /* AppSession.swift */,
 				B1000000000000000000001B /* SyncCoordinator.swift */,
+				B10000000000000000000103 /* DirectSyncStorageAdapter.swift */,
 				B1000000000000000000001C /* AppEnvironment.swift */,
 				B1000000000000000000001E /* FolderBookmarkStore.swift */,
 				B100000000000000000000AD /* ConflictResolution.swift */,
+				B100000000000000000000AE /* AppEnvironmentHolder.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -150,6 +154,8 @@
 			isa = PBXGroup;
 			children = (
 				B100000000000000000000A1 /* GuidestoopTheme.swift */,
+				B10000000000000000000105 /* AppearanceSettings.swift */,
+				B1000000000000000000010B /* EnergySettings.swift */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
@@ -158,10 +164,11 @@
 			isa = PBXGroup;
 			children = (
 				B100000000000000000000A2 /* AppShellView.swift */,
+				B10000000000000000000109 /* NowView.swift */,
 				B100000000000000000000A5 /* TasksListView.swift */,
-				B100000000000000000000AA /* KanbanView.swift */,
 				B100000000000000000000AB /* DayTimelineView.swift */,
 				B100000000000000000000AC /* SettingsView.swift */,
+				B100000000000000000000AF /* ReadyRootView.swift */,
 				B100000000000000000000A9 /* TaskDetailView.swift */,
 				B10000000000000000000048 /* Components */,
 			);
@@ -175,6 +182,8 @@
 				B100000000000000000000A4 /* ConflictBannerView.swift */,
 				B100000000000000000000A6 /* TaskRowView.swift */,
 				B100000000000000000000A7 /* QuickAddField.swift */,
+				B10000000000000000000101 /* AddTaskBar.swift */,
+				B10000000000000000000107 /* LazyTabContent.swift */,
 				B100000000000000000000A8 /* TagChipView.swift */,
 			);
 			path = Components;
@@ -258,10 +267,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				B10000000000000000000001 /* GuidestoopIOSApp.swift in Sources */,
-				B10000000000000000000006 /* CachedTask.swift in Sources */,
-				B10000000000000000000007 /* CachedProject.swift in Sources */,
-				B10000000000000000000008 /* CachedDeletedTask.swift in Sources */,
-				B10000000000000000000009 /* CachedOutboxEntry.swift in Sources */,
 				B1000000000000000000000A /* LocalStore.swift in Sources */,
 				B1000000000000000000000B /* SyncCoordinator.swift in Sources */,
 				B1000000000000000000000C /* AppEnvironment.swift in Sources */,
@@ -269,18 +274,25 @@
 				B1000000000000000000000E /* FolderBookmarkStore.swift in Sources */,
 				B1000000000000000000000F /* AppSession.swift in Sources */,
 				B100000000000000000000F1 /* GuidestoopTheme.swift in Sources */,
+				B10000000000000000000104 /* AppearanceSettings.swift in Sources */,
+				B1000000000000000000010A /* EnergySettings.swift in Sources */,
 				B100000000000000000000F2 /* AppShellView.swift in Sources */,
+				B10000000000000000000108 /* NowView.swift in Sources */,
 				B100000000000000000000F3 /* SyncStatusBadge.swift in Sources */,
 				B100000000000000000000F4 /* ConflictBannerView.swift in Sources */,
 				B100000000000000000000F5 /* TasksListView.swift in Sources */,
 				B100000000000000000000F6 /* TaskRowView.swift in Sources */,
 				B100000000000000000000F7 /* QuickAddField.swift in Sources */,
+				B10000000000000000000100 /* AddTaskBar.swift in Sources */,
+				B10000000000000000000106 /* LazyTabContent.swift in Sources */,
+				B10000000000000000000102 /* DirectSyncStorageAdapter.swift in Sources */,
 				B100000000000000000000F8 /* TagChipView.swift in Sources */,
 				B100000000000000000000F9 /* TaskDetailView.swift in Sources */,
-				B100000000000000000000FA /* KanbanView.swift in Sources */,
 				B100000000000000000000FB /* DayTimelineView.swift in Sources */,
 				B100000000000000000000FC /* SettingsView.swift in Sources */,
 				B100000000000000000000FD /* ConflictResolution.swift in Sources */,
+				B100000000000000000000FE /* AppEnvironmentHolder.swift in Sources */,
+				B100000000000000000000FF /* ReadyRootView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

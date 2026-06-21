@@ -1,13 +1,24 @@
 import Foundation
-import SwiftData
 import GuidestoopCore
 
 @MainActor
-final class LocalStore {
-    private let modelContext: ModelContext
+final class LocalStore: ObservableObject {
+    private let cacheURL: URL
+    private var cache: LocalCacheFile
 
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
+    init(cacheURL: URL? = nil) throws {
+        let directory = URL.applicationSupportDirectory
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        self.cacheURL = cacheURL ?? directory.appending(path: "guidestoop-local-cache.json")
+        self.cache = try Self.load(from: self.cacheURL)
+    }
+
+    func allCachedTasks() throws -> [Task] {
+        cache.tasks
+    }
+
+    func allCachedDeletedTasks() throws -> [DeletedTask] {
+        cache.deletedTasks
     }
 
     func replaceAll(
@@ -15,135 +26,161 @@ final class LocalStore {
         projects: [Project],
         deletedTasks: [DeletedTask]
     ) throws {
-        try deleteAll(CachedTask.self)
-        try deleteAll(CachedProject.self)
-        try deleteAll(CachedDeletedTask.self)
-        try deleteAll(CachedOutboxEntry.self)
+        try applySyncResult(
+            SyncResult(
+                tasks: tasks,
+                deletedTasks: deletedTasks,
+                projects: projects,
+                conflicts: [],
+                purgedFromTrash: 0
+            ),
+            snapshot: LocalSnapshot(tasks: tasks, deletedTasks: deletedTasks, projects: projects, outbox: [])
+        )
+    }
 
-        tasks.map(CachedTask.from).forEach(modelContext.insert)
-        projects.map(CachedProject.from).forEach(modelContext.insert)
-        deletedTasks.map(CachedDeletedTask.from).forEach(modelContext.insert)
+    func applySyncResult(_ result: SyncResult, snapshot: LocalSnapshot, flushedOutboxIDs: Set<String> = []) throws {
+        var next = cache
+        let mergedTasks = mergeTasks(from: result, snapshot: snapshot, existing: next.tasks)
+        let syncedTaskIds = Set(mergedTasks.map(\.id))
+        let syncedDeletedIds = Set(result.deletedTasks.map(\.id))
+        let syncedProjectIds = Set(result.projects.map(\.id))
+        let snapshotTaskIds = Set(snapshot.tasks.map(\.id))
+        let pendingTaskIds = Set(next.outbox.compactMap(\.taskId))
+        let preservedTaskIds = syncedTaskIds.union(pendingTaskIds).union(snapshotTaskIds)
 
-        try modelContext.save()
+        next.tasks = mergedTasks.filter { preservedTaskIds.contains($0.id) }
+
+        var deletedByID = Dictionary(uniqueKeysWithValues: next.deletedTasks.map { ($0.id, $0) })
+        for deleted in result.deletedTasks {
+            deletedByID[deleted.id] = deleted
+        }
+        next.deletedTasks = deletedByID.values.filter { syncedDeletedIds.contains($0.id) || pendingTaskIds.contains($0.id) }
+
+        var projectsByID = Dictionary(uniqueKeysWithValues: next.projects.map { ($0.id, $0) })
+        for project in result.projects {
+            projectsByID[project.id] = project
+        }
+        next.projects = projectsByID.values.filter { syncedProjectIds.contains($0.id) }
+
+        if !flushedOutboxIDs.isEmpty {
+            next.outbox.removeAll { flushedOutboxIDs.contains($0.id) }
+        }
+
+        try persist(next)
+    }
+
+    private func mergeTasks(from result: SyncResult, snapshot: LocalSnapshot, existing: [Task]) -> [Task] {
+        var byID = Dictionary(uniqueKeysWithValues: result.tasks.map { ($0.id, $0) })
+        for task in snapshot.tasks where byID[task.id] == nil {
+            byID[task.id] = task
+        }
+        for task in existing where byID[task.id] == nil {
+            byID[task.id] = task
+        }
+        return byID.values.sorted { $0.id < $1.id }
     }
 
     func saveTask(_ task: Task) throws {
-        try upsertTask(task)
-
-        enqueue(.save(task))
-        try modelContext.save()
+        var next = cache
+        if let index = next.tasks.firstIndex(where: { $0.id == task.id }) {
+            next.tasks[index] = task
+        } else {
+            next.tasks.append(task)
+        }
+        replaceOutbox(for: task.id, in: &next, with: .save(task))
+        try persist(next)
     }
 
     func deleteTask(id taskId: String, deletedTask: DeletedTask? = nil) throws {
-        if let existing = try fetchCachedTask(id: taskId) {
-            modelContext.delete(existing)
-        }
-
+        var next = cache
+        next.tasks.removeAll { $0.id == taskId }
         if let deletedTask {
-            if let existingDeleted = try fetchCachedDeletedTask(id: deletedTask.id) {
-                existingDeleted.title = deletedTask.title
-                existingDeleted.statusRawValue = deletedTask.status.rawValue
-                existingDeleted.scheduled = deletedTask.scheduled
-                existingDeleted.duration = deletedTask.duration
-                existingDeleted.project = deletedTask.project
-                existingDeleted.tags = deletedTask.tags
-                existingDeleted.created = deletedTask.created
-                existingDeleted.updated = deletedTask.updated
-                existingDeleted.deletedAt = deletedTask.deletedAt
-                existingDeleted.body = deletedTask.body
+            if let index = next.deletedTasks.firstIndex(where: { $0.id == deletedTask.id }) {
+                next.deletedTasks[index] = deletedTask
             } else {
-                modelContext.insert(CachedDeletedTask.from(deletedTask))
+                next.deletedTasks.append(deletedTask)
             }
         }
-
-        enqueue(.delete(id: taskId, deletedTask: deletedTask))
-        try modelContext.save()
+        replaceOutbox(for: taskId, in: &next, with: .delete(id: taskId, deletedTask: deletedTask))
+        try persist(next)
     }
 
     func restoreTask(_ task: Task) throws {
-        try upsertTask(task)
-
-        if let deleted = try fetchCachedDeletedTask(id: task.id) {
-            modelContext.delete(deleted)
+        var next = cache
+        if let index = next.tasks.firstIndex(where: { $0.id == task.id }) {
+            next.tasks[index] = task
+        } else {
+            next.tasks.append(task)
         }
-
-        enqueue(.restore(task))
-        try modelContext.save()
+        next.deletedTasks.removeAll { $0.id == task.id }
+        replaceOutbox(for: task.id, in: &next, with: .restore(task))
+        try persist(next)
     }
 
     func purgeTask(id taskId: String) throws {
-        if let deleted = try fetchCachedDeletedTask(id: taskId) {
-            modelContext.delete(deleted)
-        }
-
-        enqueue(.purge(id: taskId))
-        try modelContext.save()
+        var next = cache
+        next.deletedTasks.removeAll { $0.id == taskId }
+        replaceOutbox(for: taskId, in: &next, with: .purge(id: taskId))
+        try persist(next)
     }
 
     func pendingOutboxCount() throws -> Int {
-        let descriptor = FetchDescriptor<CachedOutboxEntry>()
-        return try modelContext.fetchCount(descriptor)
+        cache.outbox.count
     }
 
     func taskCount() throws -> Int {
-        let descriptor = FetchDescriptor<CachedTask>()
-        return try modelContext.fetchCount(descriptor)
+        cache.tasks.count
     }
 
     func snapshot() throws -> LocalSnapshot {
-        let tasks = try modelContext.fetch(FetchDescriptor<CachedTask>())
-            .map { $0.toTask() }
-            .sorted { $0.id < $1.id }
-        let projects = try modelContext.fetch(FetchDescriptor<CachedProject>())
-            .map { $0.toProject() }
-            .sorted { $0.id < $1.id }
-        let deletedTasks = try modelContext.fetch(FetchDescriptor<CachedDeletedTask>())
-            .map { $0.toDeletedTask() }
-            .sorted { $0.id < $1.id }
-        let outboxEntries = try modelContext.fetch(
-            FetchDescriptor<CachedOutboxEntry>(
-                sortBy: [SortDescriptor(\.createdAt, order: .forward)]
-            )
+        LocalSnapshot(
+            tasks: cache.tasks.sorted { $0.id < $1.id },
+            deletedTasks: cache.deletedTasks.sorted { $0.id < $1.id },
+            projects: cache.projects.sorted { $0.id < $1.id },
+            outbox: cache.outbox.map { OutboxSnapshotEntry(from: $0) }
         )
-        let outbox = outboxEntries.compactMap { $0.toOperation() }
-        return LocalSnapshot(tasks: tasks, deletedTasks: deletedTasks, projects: projects, outbox: outbox)
     }
 
-    private func enqueue(_ operation: OutboxOperation) {
-        modelContext.insert(CachedOutboxEntry.from(operation))
+    private func replaceOutbox(for taskId: String, in cache: inout LocalCacheFile, with operation: OutboxOperation) {
+        cache.outbox.removeAll { $0.taskId == taskId }
+        cache.outbox.append(CodableOutboxEntry(id: UUID().uuidString.lowercased(), operation: operation))
     }
 
-    private func upsertTask(_ task: Task) throws {
-        if let existing = try fetchCachedTask(id: task.id) {
-            existing.title = task.title
-            existing.statusRawValue = task.status.rawValue
-            existing.scheduled = task.scheduled
-            existing.duration = task.duration
-            existing.project = task.project
-            existing.tags = task.tags
-            existing.created = task.created
-            existing.updated = task.updated
-            existing.body = task.body
-            return
+    private func persist(_ next: LocalCacheFile) throws {
+        cache = next
+        let data = try JSONEncoder().encode(next)
+        try data.write(to: cacheURL, options: .atomic)
+    }
+
+    private static func load(from url: URL) throws -> LocalCacheFile {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: url.path) else {
+            return LocalCacheFile()
         }
-        modelContext.insert(CachedTask.from(task))
+        do {
+            let data = try Data(contentsOf: url)
+            return try JSONDecoder().decode(LocalCacheFile.self, from: data)
+        } catch {
+            let backup = url.deletingLastPathComponent()
+                .appending(path: "guidestoop-local-cache.corrupt-\(Int(Date().timeIntervalSince1970)).json")
+            try? fm.moveItem(at: url, to: backup)
+            return LocalCacheFile()
+        }
+    }
+}
+
+struct OutboxSnapshotEntry: Sendable, Identifiable {
+    var id: String
+    var operation: OutboxOperation
+
+    init(id: String, operation: OutboxOperation) {
+        self.id = id
+        self.operation = operation
     }
 
-    private func deleteAll<T: PersistentModel>(_ type: T.Type) throws {
-        let records = try modelContext.fetch(FetchDescriptor<T>())
-        records.forEach(modelContext.delete)
-    }
-
-    private func fetchCachedTask(id: String) throws -> CachedTask? {
-        let predicate = #Predicate<CachedTask> { $0.id == id }
-        let descriptor = FetchDescriptor<CachedTask>(predicate: predicate)
-        return try modelContext.fetch(descriptor).first
-    }
-
-    private func fetchCachedDeletedTask(id: String) throws -> CachedDeletedTask? {
-        let predicate = #Predicate<CachedDeletedTask> { $0.id == id }
-        let descriptor = FetchDescriptor<CachedDeletedTask>(predicate: predicate)
-        return try modelContext.fetch(descriptor).first
+    fileprivate init(from codable: CodableOutboxEntry) {
+        id = codable.id
+        operation = codable.toOperation()
     }
 }
 
@@ -151,5 +188,34 @@ struct LocalSnapshot: Sendable {
     var tasks: [Task]
     var deletedTasks: [DeletedTask]
     var projects: [Project]
-    var outbox: [OutboxOperation]
+    var outbox: [OutboxSnapshotEntry]
+
+    var outboxOperations: [OutboxOperation] {
+        outbox.map(\.operation)
+    }
+}
+
+private struct LocalCacheFile: Codable {
+    var tasks: [Task] = []
+    var deletedTasks: [DeletedTask] = []
+    var projects: [Project] = []
+    var outbox: [CodableOutboxEntry] = []
+}
+
+private struct CodableOutboxEntry: Codable {
+    var id: String
+    var op: OutboxOp
+    var taskId: String?
+    var deletedTask: DeletedTask?
+
+    init(id: String, operation: OutboxOperation) {
+        self.id = id
+        op = operation.op
+        taskId = operation.taskId ?? operation.task?.id
+        deletedTask = operation.deletedTask
+    }
+
+    func toOperation() -> OutboxOperation {
+        OutboxOperation(op: op, task: nil, deletedTask: deletedTask, taskId: taskId)
+    }
 }

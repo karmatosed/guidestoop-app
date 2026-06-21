@@ -21,7 +21,7 @@ public struct OutboxOperation: Equatable, Sendable {
     }
 
     public static func save(_ task: Task) -> OutboxOperation {
-        OutboxOperation(op: .save, task: task, taskId: task.id)
+        OutboxOperation(op: .save, taskId: task.id)
     }
 
     public static func delete(id: String, deletedTask: DeletedTask? = nil) -> OutboxOperation {
@@ -29,7 +29,7 @@ public struct OutboxOperation: Equatable, Sendable {
     }
 
     public static func restore(_ task: Task) -> OutboxOperation {
-        OutboxOperation(op: .restore, task: task, taskId: task.id)
+        OutboxOperation(op: .restore, taskId: task.id)
     }
 
     public static func purge(id: String) -> OutboxOperation {

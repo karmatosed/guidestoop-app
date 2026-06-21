@@ -29,57 +29,50 @@ struct TaskDetailView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if horizontalSizeClass == .regular {
-                    HStack(spacing: 0) {
-                        formContent
-                            .frame(maxWidth: .infinity)
-                        Divider()
-                        markdownContent
-                            .frame(maxWidth: .infinity)
-                    }
-                } else {
-                    VStack(spacing: 0) {
-                        Picker("Tab", selection: $selectedTab) {
-                            ForEach(DetailTab.allCases, id: \.self) { tab in
-                                Text(tab.rawValue).tag(tab)
-                            }
+        Group {
+            if horizontalSizeClass == .regular {
+                HStack(spacing: 0) {
+                    formContent
+                        .frame(maxWidth: .infinity)
+                    Divider()
+                    markdownContent
+                        .frame(maxWidth: .infinity)
+                }
+            } else {
+                VStack(spacing: 0) {
+                    Picker("Tab", selection: $selectedTab) {
+                        ForEach(DetailTab.allCases, id: \.self) { tab in
+                            Text(tab.rawValue).tag(tab)
                         }
-                        .pickerStyle(.segmented)
-                        .padding()
+                    }
+                    .pickerStyle(.segmented)
+                    .padding()
 
-                        if selectedTab == .form {
-                            formContent
-                        } else {
-                            markdownContent
-                        }
+                    if selectedTab == .form {
+                        formContent
+                    } else {
+                        markdownContent
                     }
                 }
-            }
-            .background(GuidestoopTheme.background)
-            .foregroundStyle(GuidestoopTheme.textPrimary)
-            .navigationTitle("Task")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismissWithoutSaving() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { saveAndDismiss() }
-                }
-            }
-            .onAppear(perform: loadFromDraft)
-            .alert("Could not save", isPresented: Binding(
-                get: { saveError != nil },
-                set: { if !$0 { saveError = nil } }
-            )) {
-                Button("OK", role: .cancel) { saveError = nil }
-            } message: {
-                Text(saveError ?? "")
             }
         }
-        .preferredColorScheme(.dark)
+        .background(GuidestoopTheme.background)
+        .navigationTitle("Task")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") { saveAndDismiss() }
+            }
+        }
+        .onAppear(perform: loadFromDraft)
+        .alert("Could not save", isPresented: Binding(
+            get: { saveError != nil },
+            set: { if !$0 { saveError = nil } }
+        )) {
+            Button("OK", role: .cancel) { saveError = nil }
+        } message: {
+            Text(saveError ?? "")
+        }
     }
 
     private var formContent: some View {
@@ -125,18 +118,23 @@ struct TaskDetailView: View {
                 TextField("Tags (comma-separated)", text: $tagsText)
             }
 
+            Section {
+                Toggle("High priority", isOn: $draft.highPriority)
+            }
+
             Section("Notes") {
                 TextEditor(text: $draft.body)
                     .frame(minHeight: 120)
+                    .font(GuidestoopTypography.mono)
             }
         }
-        .scrollContentBackground(.hidden)
+        .guidestoopFormStyle()
     }
 
     private var markdownContent: some View {
         ScrollView {
             Text(markdownText)
-                .font(.system(.footnote, design: .monospaced))
+                .font(GuidestoopTypography.mono)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
                 .textSelection(.enabled)
@@ -210,14 +208,10 @@ struct TaskDetailView: View {
         applyEditsToDraft()
         do {
             try appEnvironment.localStore.saveTask(draft)
-            Swift.Task { await appEnvironment.syncCoordinator.syncNow() }
+            appEnvironment.syncCoordinator.noteLocalChange()
             dismiss()
         } catch {
             saveError = error.localizedDescription
         }
-    }
-
-    private func dismissWithoutSaving() {
-        dismiss()
     }
 }

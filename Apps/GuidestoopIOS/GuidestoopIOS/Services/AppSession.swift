@@ -1,22 +1,40 @@
 import Foundation
-import SwiftData
 
 @MainActor
 final class AppSession: ObservableObject {
     enum Phase {
+        case bootstrapping
         case onboarding
-        case ready(AppEnvironment)
+        case ready
     }
 
     @Published private(set) var phase: Phase
-    private let modelContainer: ModelContainer
+    @Published private(set) var reloadToken = UUID()
+    @Published private(set) var bootstrapError: String?
 
-    init(modelContainer: ModelContainer) {
-        self.modelContainer = modelContainer
-        if FolderBookmarkStore.isConfigured,
-           let environment = try? AppEnvironment(modelContext: modelContainer.mainContext) {
-            phase = .ready(environment)
-        } else {
+    init() {
+        phase = FolderBookmarkStore.isConfigured ? .ready : .bootstrapping
+    }
+
+    func bootstrapStorageIfNeeded() async {
+        guard !FolderBookmarkStore.isConfigured else {
+            if phase != .ready {
+                phase = .ready
+            }
+            return
+        }
+
+        guard phase == .bootstrapping else { return }
+
+        phase = .bootstrapping
+        bootstrapError = nil
+
+        do {
+            try await FolderSetup.useDefaultFolder()
+            phase = .ready
+            reloadToken = UUID()
+        } catch {
+            bootstrapError = error.localizedDescription
             phase = .onboarding
         }
     }
@@ -25,12 +43,19 @@ final class AppSession: ObservableObject {
         reloadEnvironment()
     }
 
+    func revertToOnboardingIfNeeded() {
+        guard !FolderBookmarkStore.isConfigured else { return }
+        phase = .onboarding
+    }
+
     func reloadEnvironment() {
-        guard FolderBookmarkStore.isConfigured,
-              let environment = try? AppEnvironment(modelContext: modelContainer.mainContext) else {
-            phase = .onboarding
+        guard FolderBookmarkStore.isConfigured else {
+            phase = .bootstrapping
+            bootstrapError = nil
+            Swift.Task { await bootstrapStorageIfNeeded() }
             return
         }
-        phase = .ready(environment)
+        phase = .ready
+        reloadToken = UUID()
     }
 }

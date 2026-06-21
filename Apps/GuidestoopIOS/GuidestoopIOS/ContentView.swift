@@ -1,5 +1,4 @@
 import SwiftUI
-import SwiftData
 import GuidestoopCore
 import GuidestoopStorage
 
@@ -45,14 +44,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    if let environment = try? AppEnvironment(
-        modelContext: try! ModelContainer(
-            for: CachedTask.self,
-            CachedProject.self,
-            CachedDeletedTask.self,
-            CachedOutboxEntry.self
-        ).mainContext
-    ) {
+    if let environment = try? AppEnvironment() {
         ContentView()
             .environmentObject(environment)
     }

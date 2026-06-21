@@ -37,9 +37,7 @@ enum FolderBookmarkStore {
         if stale {
             try save(url: url, securityScoped: true)
         }
-        guard url.startAccessingSecurityScopedResource() else {
-            throw StorageError.folderNotConfigured
-        }
+        _ = url.startAccessingSecurityScopedResource()
         return url
     }
 
@@ -53,17 +51,23 @@ enum FolderBookmarkStore {
 }
 
 enum FolderSetup {
-    static func defaultFolderURL() -> URL {
-        if let icloud = try? ICloudAdapter.defaultFolderURL() {
-            return icloud
-        }
-        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Guidestoop", isDirectory: true)
-    }
+    private static let maxWaitNanoseconds: UInt64 = 10_000_000_000
+    private static let retryDelayNanoseconds: UInt64 = 500_000_000
 
     static func useDefaultFolder() async throws {
-        let url = defaultFolderURL()
+        let url = try await resolveDefaultFolderURL()
         try await configure(url: url, securityScoped: false)
+    }
+
+    static func resolveDefaultFolderURL() async throws -> URL {
+        let deadline = DispatchTime.now().uptimeNanoseconds + maxWaitNanoseconds
+        while DispatchTime.now().uptimeNanoseconds < deadline {
+            if let url = try? ICloudAdapter.defaultFolderURL() {
+                return url
+            }
+            try await Swift.Task.sleep(nanoseconds: retryDelayNanoseconds)
+        }
+        throw FolderSetupError.iCloudUnavailable
     }
 
     static func configurePickedFolder(_ url: URL) async throws {
@@ -79,5 +83,16 @@ enum FolderSetup {
         let adapter = ICloudAdapter(rootURL: url)
         try await adapter.ensureFolderStructure()
         try FolderBookmarkStore.save(url: url, securityScoped: securityScoped)
+    }
+}
+
+enum FolderSetupError: LocalizedError {
+    case iCloudUnavailable
+
+    var errorDescription: String? {
+        switch self {
+        case .iCloudUnavailable:
+            return "Could not access iCloud Drive. Sign in to iCloud, enable iCloud Drive, and try again."
+        }
     }
 }

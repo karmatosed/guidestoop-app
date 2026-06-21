@@ -75,7 +75,7 @@ public struct SyncEngine {
         localProjects: [Project],
         outbox: [OutboxOperation]
     ) throws -> SyncResult {
-        try flushOutbox(outbox)
+        try flushOutbox(outbox, localTasks: localTasks, localDeletedTasks: localDeletedTasks)
 
         var meta = try adapter.readMeta()
         var manifest = meta.files
@@ -279,21 +279,27 @@ public struct SyncEngine {
         }
     }
 
-    private func flushOutbox(_ outbox: [OutboxOperation]) throws {
+    private func flushOutbox(
+        _ outbox: [OutboxOperation],
+        localTasks: [Task],
+        localDeletedTasks: [DeletedTask]
+    ) throws {
         for operation in outbox {
             switch operation.op {
             case .save:
-                guard let task = operation.task else { continue }
+                guard let taskId = operation.taskId else { continue }
+                guard let task = operation.task ?? localTasks.first(where: { $0.id == taskId }) else { continue }
                 try adapter.write(path: SyncPaths.taskPath(id: task.id), content: try TaskMarkdown.serialize(task))
             case .delete:
                 guard let taskId = operation.taskId else { continue }
                 try adapter.delete(path: SyncPaths.taskPath(id: taskId))
-                if let deleted = operation.deletedTask {
+                if let deleted = operation.deletedTask ?? localDeletedTasks.first(where: { $0.id == taskId }) {
                     let content = try TaskMarkdown.serializeDeleted(deleted.asTask, deletedAt: deleted.deletedAt)
                     try adapter.write(path: SyncPaths.deletedTaskPath(id: taskId), content: content)
                 }
             case .restore:
-                guard let task = operation.task else { continue }
+                guard let taskId = operation.taskId else { continue }
+                guard let task = operation.task ?? localTasks.first(where: { $0.id == taskId }) else { continue }
                 try adapter.write(path: SyncPaths.taskPath(id: task.id), content: try TaskMarkdown.serialize(task))
                 try adapter.delete(path: SyncPaths.deletedTaskPath(id: task.id))
             case .purge:

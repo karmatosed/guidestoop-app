@@ -8,6 +8,7 @@ public struct Task: Codable, Identifiable, Equatable, Sendable {
     public var duration: Int?
     public var project: String?
     public var tags: [String]
+    public var highPriority: Bool = false
     public var created: String
     public var updated: String
     public var body: String
@@ -20,6 +21,7 @@ public struct Task: Codable, Identifiable, Equatable, Sendable {
         duration: Int? = nil,
         project: String? = nil,
         tags: [String] = [],
+        highPriority: Bool = false,
         created: String,
         updated: String,
         body: String = ""
@@ -31,6 +33,7 @@ public struct Task: Codable, Identifiable, Equatable, Sendable {
         self.duration = duration
         self.project = project
         self.tags = tags
+        self.highPriority = highPriority
         self.created = created
         self.updated = updated
         self.body = body

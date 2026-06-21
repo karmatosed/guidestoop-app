@@ -1,49 +1,56 @@
 import SwiftUI
-import SwiftData
 
 @main
 struct GuidestoopIOSApp: App {
-    private let modelContainer: ModelContainer
-    @StateObject private var appSession: AppSession
-
-    init() {
-        let container: ModelContainer
-        do {
-            container = try ModelContainer(
-                for: CachedTask.self,
-                CachedProject.self,
-                CachedDeletedTask.self,
-                CachedOutboxEntry.self
-            )
-        } catch {
-            fatalError("Failed to initialize SwiftData container: \(error.localizedDescription)")
-        }
-        modelContainer = container
-        _appSession = StateObject(wrappedValue: AppSession(modelContainer: container))
-    }
+    @StateObject private var appSession = AppSession()
+    @StateObject private var appearanceSettings = AppearanceSettings()
+    @StateObject private var energySettings = EnergySettings()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(appSession)
+                .environmentObject(appearanceSettings)
+                .environmentObject(energySettings)
+                .background(GuidestoopTheme.background)
         }
-        .modelContainer(modelContainer)
     }
 }
 
 private struct RootView: View {
     @EnvironmentObject private var appSession: AppSession
+    @EnvironmentObject private var appearanceSettings: AppearanceSettings
 
     var body: some View {
-        switch appSession.phase {
-        case .onboarding:
-            OnboardingView {
-                appSession.finishOnboarding()
+        Group {
+            switch appSession.phase {
+            case .bootstrapping:
+                bootstrappingView
+            case .onboarding:
+                OnboardingView(initialError: appSession.bootstrapError) {
+                    appSession.finishOnboarding()
+                }
+            case .ready:
+                ReadyRootView()
+                    .environmentObject(appSession)
             }
-        case .ready(let environment):
-            AppShellView()
-                .environmentObject(environment)
-                .environmentObject(appSession)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(GuidestoopTheme.background)
+        .guidestoopScreenStyle()
+        .preferredColorScheme(appearanceSettings.preference.colorScheme)
+        .task {
+            await appSession.bootstrapStorageIfNeeded()
+        }
+    }
+
+    private var bootstrappingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .tint(GuidestoopTheme.textPrimary)
+            Text("Setting up iCloud…")
+                .font(.subheadline)
+                .foregroundStyle(GuidestoopTheme.textSecondary)
         }
     }
 }

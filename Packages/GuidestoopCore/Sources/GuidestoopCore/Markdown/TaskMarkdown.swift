@@ -42,6 +42,7 @@ public enum TaskMarkdown {
             duration: parseOptionalInt(data["duration"]),
             project: parseOptionalString(data["project"]),
             tags: parseTags(data["tags"]),
+            highPriority: parseOptionalBool(data["highPriority"]) ?? false,
             created: try coerceString(data["created"], field: "created"),
             updated: try coerceString(data["updated"], field: "updated"),
             body: normalizeBody(content)
@@ -60,6 +61,7 @@ public enum TaskMarkdown {
         if let duration = task.duration { frontmatter["duration"] = duration }
         if let project = task.project { frontmatter["project"] = project }
         if !task.tags.isEmpty { frontmatter["tags"] = task.tags }
+        if task.highPriority { frontmatter["highPriority"] = true }
 
         let yaml = try Yams.dump(object: frontmatter, allowUnicode: true)
         let body = task.body.isEmpty ? "" : "\n\(task.body)"
@@ -80,6 +82,7 @@ public enum TaskMarkdown {
             duration: parseOptionalInt(data["duration"]),
             project: parseOptionalString(data["project"]),
             tags: parseTags(data["tags"]),
+            highPriority: parseOptionalBool(data["highPriority"]) ?? false,
             created: try coerceString(data["created"], field: "created"),
             updated: try coerceString(data["updated"], field: "updated"),
             deletedAt: try coerceString(data["deletedAt"], field: "deletedAt"),
@@ -100,6 +103,7 @@ public enum TaskMarkdown {
         if let duration = task.duration { frontmatter["duration"] = duration }
         if let project = task.project { frontmatter["project"] = project }
         if !task.tags.isEmpty { frontmatter["tags"] = task.tags }
+        if task.highPriority { frontmatter["highPriority"] = true }
 
         let yaml = try Yams.dump(object: frontmatter, allowUnicode: true)
         let body = task.body.isEmpty ? "" : "\n\(task.body)"
@@ -148,6 +152,12 @@ public enum TaskMarkdown {
         if let date = value as? Date {
             return isoFormatter.string(from: date)
         }
+        if let bool = value as? Bool {
+            return bool ? "true" : "false"
+        }
+        if let number = value as? NSNumber {
+            return number.stringValue
+        }
         throw TaskMarkdownError.missingField(field)
     }
 
@@ -158,6 +168,12 @@ public enum TaskMarkdown {
         }
         if let date = value as? Date {
             return isoFormatter.string(from: date)
+        }
+        if let bool = value as? Bool {
+            return bool ? "true" : "false"
+        }
+        if let number = value as? NSNumber {
+            return number.stringValue
         }
         let string = "\(value)"
         return string.isEmpty ? nil : string
@@ -184,11 +200,31 @@ public enum TaskMarkdown {
         return tags
     }
 
-    private static func parseStatus(_ value: Any?) throws -> TaskStatus {
-        guard let string = value as? String, let status = TaskStatus(rawValue: string) else {
-            throw TaskMarkdownError.invalidStatus
+    private static func parseOptionalBool(_ value: Any?) -> Bool? {
+        if value == nil || value is NSNull { return nil }
+        if let bool = value as? Bool { return bool }
+        if let string = value as? String {
+            switch string.lowercased() {
+            case "true", "yes", "1", "high":
+                return true
+            case "false", "no", "0":
+                return false
+            default:
+                return nil
+            }
         }
-        return status
+        if let number = value as? NSNumber { return number.boolValue }
+        return nil
+    }
+
+    private static func parseStatus(_ value: Any?) throws -> TaskStatus {
+        if let string = value as? String, let status = TaskStatus(rawValue: string) {
+            return status
+        }
+        if let bool = value as? Bool {
+            return bool ? .done : .inbox
+        }
+        throw TaskMarkdownError.invalidStatus
     }
 
     private static func normalizeBody(_ content: String) -> String {

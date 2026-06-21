@@ -9,6 +9,7 @@ final class TaskFiltersTests: XCTestCase {
         scheduled: String? = nil,
         project: String? = nil,
         tags: [String] = [],
+        highPriority: Bool = false,
         body: String = ""
     ) -> Task {
         Task(
@@ -18,6 +19,7 @@ final class TaskFiltersTests: XCTestCase {
             scheduled: scheduled,
             project: project,
             tags: tags,
+            highPriority: highPriority,
             created: "2026-05-01T08:00:00Z",
             updated: "2026-05-01T09:00:00Z",
             body: body
@@ -75,5 +77,18 @@ final class TaskFiltersTests: XCTestCase {
         let result = TaskFilters.dayTimelineTasks(tasks, dateYmd: today)
         XCTAssertEqual(result.scheduled.map(\.id), ["scheduled"])
         XCTAssertEqual(result.focus.map(\.id), ["focus"])
+    }
+
+    func testNowTasksPrioritizesHighPriorityAndLimitsCount() {
+        let tasks = [
+            task(id: "a", status: .focus, highPriority: false),
+            task(id: "b", status: .focus, highPriority: true),
+            task(id: "c", status: .focus, highPriority: false),
+            task(id: "done", status: .done, highPriority: true),
+        ]
+        let today = "2026-05-23"
+        let limited = TaskFilters.nowTasks(tasks, todayYmd: today, limit: 2)
+        XCTAssertEqual(limited.map(\.id), ["b", "a"])
+        XCTAssertEqual(TaskFilters.todayFocusCount(tasks, todayYmd: today), 3)
     }
 }

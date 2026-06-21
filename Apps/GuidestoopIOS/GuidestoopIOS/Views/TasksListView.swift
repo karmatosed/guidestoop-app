@@ -1,30 +1,36 @@
 import SwiftUI
-import SwiftData
 import GuidestoopCore
+
+private extension TaskListTab {
+    var systemImage: String {
+        switch self {
+        case .all: return "square.grid.2x2"
+        case .inbox: return "tray"
+        case .blocked: return "hand.raised"
+        case .today: return "sun.max"
+        case .done: return "checkmark.circle"
+        case .trash: return "trash"
+        }
+    }
+}
 
 struct TasksListView: View {
     @EnvironmentObject private var appEnvironment: AppEnvironment
-    @Binding var isSearchPresented: Bool
     @Binding var selectedTab: TaskListTab
 
-    @Query(sort: \CachedTask.updated, order: .reverse) private var cachedTasks: [CachedTask]
-    @Query(sort: \CachedDeletedTask.deletedAt, order: .reverse) private var cachedDeletedTasks: [CachedDeletedTask]
+    @State private var tasks: [Task] = []
+    @State private var deletedTasks: [DeletedTask] = []
 
     @State private var searchQuery = ""
     @State private var selectedTag: String?
-    @State private var selectedTask: Task?
     @State private var saveError: String?
 
-    init(
-        isSearchPresented: Binding<Bool> = .constant(false),
-        selectedTab: Binding<TaskListTab> = .constant(.all)
-    ) {
-        _isSearchPresented = isSearchPresented
+    init(selectedTab: Binding<TaskListTab> = .constant(.all)) {
         _selectedTab = selectedTab
     }
 
     private var allTasks: [Task] {
-        cachedTasks.map { $0.toTask() }
+        tasks
     }
 
     private var visibleTasks: [Task] {
@@ -40,23 +46,43 @@ struct TasksListView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            tabPicker
-
-            if selectedTab != .trash, !availableTags.isEmpty {
-                tagScroller
-            }
-
+        Group {
             if selectedTab == .trash {
                 trashList
             } else {
                 taskList
             }
         }
-        .searchable(text: $searchQuery, isPresented: $isSearchPresented, prompt: "Search tasks")
-        .sheet(item: $selectedTask) { task in
-            TaskDetailView(task: task)
-                .environmentObject(appEnvironment)
+        .background(GuidestoopTheme.background)
+        .navigationTitle("Tasks")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("g")
+                    .font(GuidestoopTypography.logo)
+                    .foregroundStyle(GuidestoopTheme.textPrimary)
+            }
+            ToolbarItem(placement: .topBarLeading) {
+                filterMenu
+            }
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if selectedTab != .trash, !availableTags.isEmpty {
+                    tagMenu
+                }
+                SyncToolbarButton(
+                    isSyncing: appEnvironment.syncCoordinator.isSyncing,
+                    outboxCount: appEnvironment.syncCoordinator.outboxCount
+                ) {
+                    Swift.Task { await appEnvironment.syncCoordinator.syncNow() }
+                }
+            }
+        }
+        .searchable(text: $searchQuery, prompt: "Search tasks")
+        .navigationDestination(for: String.self) { taskId in
+            if let task = allTasks.first(where: { $0.id == taskId }) {
+                TaskDetailView(task: task)
+                    .environmentObject(appEnvironment)
+            }
         }
         .alert("Could not save", isPresented: Binding(
             get: { saveError != nil },
@@ -66,120 +92,125 @@ struct TasksListView: View {
         } message: {
             Text(saveError ?? "")
         }
-    }
-
-    private var tabPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(TaskListTab.allCases, id: \.self) { tab in
-                    Button {
-                        selectedTab = tab
-                        if tab == .trash {
-                            selectedTag = nil
-                        }
-                    } label: {
-                        Text(tab.title)
-                            .font(.subheadline.weight(selectedTab == tab ? .semibold : .regular))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(selectedTab == tab ? GuidestoopTheme.surface : Color.clear)
-                            .foregroundStyle(selectedTab == tab ? GuidestoopTheme.textPrimary : GuidestoopTheme.textSecondary)
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
+        .task {
+            reloadTasks()
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-TestAddTask") {
+                runAddTaskSelfTest()
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            #endif
+        }
+        .onChange(of: appEnvironment.syncCoordinator.lastSyncedAt) { _, _ in
+            reloadTasks()
+        }
+        .onChange(of: selectedTab) { _, tab in
+            if tab == .trash {
+                selectedTag = nil
+            }
         }
     }
 
-    private var tagScroller: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                TagChipView(tag: "All tags", isSelected: selectedTag == nil) {
-                    selectedTag = nil
-                }
-                ForEach(availableTags, id: \.self) { tag in
-                    TagChipView(tag: tag, isSelected: selectedTag == tag) {
-                        selectedTag = selectedTag == tag ? nil : tag
-                    }
+    #if DEBUG
+    private func runAddTaskSelfTest() {
+        let task = TaskFactory.create(title: "Self-test task")
+        do {
+            try appEnvironment.localStore.saveTask(task)
+            reloadTasks()
+            let storeCount = try appEnvironment.localStore.taskCount()
+            let queryCount = tasks.count
+            let pass = storeCount == 1 && queryCount == 1 && tasks.first?.title == "Self-test task"
+            if pass {
+                print("ADD_TASK_TEST_PASS storeCount=\(storeCount) queryCount=\(queryCount)")
+            } else {
+                print("ADD_TASK_TEST_FAIL storeCount=\(storeCount) queryCount=\(queryCount)")
+            }
+        } catch {
+            print("ADD_TASK_TEST_FAIL \(error.localizedDescription)")
+        }
+    }
+    #endif
+
+    private func reloadTasks() {
+        let store = appEnvironment.localStore
+        tasks = (try? store.allCachedTasks()) ?? []
+        deletedTasks = (try? store.allCachedDeletedTasks()) ?? []
+    }
+
+    private var filterMenu: some View {
+        Menu {
+            Picker("Filter", selection: $selectedTab) {
+                ForEach(TaskListTab.allCases, id: \.self) { tab in
+                    Label(tab.title, systemImage: tab.systemImage).tag(tab)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
+        } label: {
+            Label(selectedTab.title, systemImage: selectedTab.systemImage)
+                .font(GuidestoopTypography.meta)
+        }
+    }
+
+    private var tagMenu: some View {
+        Menu {
+            Picker("Tag", selection: $selectedTag) {
+                Text("All tags").tag(String?.none)
+                ForEach(availableTags, id: \.self) { tag in
+                    Text(tag).tag(Optional(tag))
+                }
+            }
+        } label: {
+            Label(selectedTag ?? "Tags", systemImage: "tag")
+                .font(GuidestoopTypography.meta)
         }
     }
 
     private var taskList: some View {
         List {
-            Section {
-                QuickAddField { title in
-                    addTask(title: title)
+            if visibleTasks.isEmpty {
+                ContentUnavailableView {
+                    Label(emptyMessage, systemImage: "tray")
+                } description: {
+                    Text("Add tasks from the Now tab.")
+                        .font(GuidestoopTypography.meta)
                 }
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-            }
-
-            Section {
-                if visibleTasks.isEmpty {
-                    Text(emptyMessage)
-                        .font(.subheadline)
-                        .foregroundStyle(GuidestoopTheme.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .listRowBackground(Color.clear)
-                } else {
-                    ForEach(visibleTasks) { task in
+            } else {
+                ForEach(visibleTasks) { task in
+                    NavigationLink(value: task.id) {
                         TaskRowView(task: task) {
                             toggleDone(task)
                         }
-                        .listRowBackground(Color.clear)
-                        .listRowSeparatorTint(GuidestoopTheme.dashedBorder)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selectedTask = task
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                moveToTrash(task)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            moveToTrash(task)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
                         }
                     }
                 }
             }
         }
-        .listStyle(.plain)
+        .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(GuidestoopTheme.background)
     }
 
     private var trashList: some View {
         List {
-            if cachedDeletedTasks.isEmpty {
-                Text("Trash is empty")
-                    .font(.subheadline)
-                    .foregroundStyle(GuidestoopTheme.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .listRowBackground(Color.clear)
+            if deletedTasks.isEmpty {
+                ContentUnavailableView {
+                    Label("Trash is empty", systemImage: "trash")
+                }
             } else {
-                ForEach(cachedDeletedTasks, id: \.id) { cached in
-                    let deleted = cached.toDeletedTask()
+                ForEach(deletedTasks, id: \.id) { deleted in
                     DeletedTaskRowView(
                         deletedTask: deleted,
                         daysUntilPurge: TrashLogic.daysUntilPurge(deletedAt: deleted.deletedAt)
                     )
-                    .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(GuidestoopTheme.dashedBorder)
                     .swipeActions(edge: .leading) {
                         Button {
                             restoreFromTrash(deleted)
                         } label: {
                             Label("Restore", systemImage: "arrow.uturn.backward")
                         }
-                        .tint(GuidestoopTheme.accent)
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button(role: .destructive) {
@@ -191,14 +222,13 @@ struct TasksListView: View {
                 }
             }
         }
-        .listStyle(.plain)
+        .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(GuidestoopTheme.background)
     }
 
     private var emptyMessage: String {
         if !searchQuery.isEmpty || selectedTag != nil {
-            return "No tasks match your filters"
+            return "No matching tasks"
         }
         switch selectedTab {
         case .all: return "No tasks yet"
@@ -208,11 +238,6 @@ struct TasksListView: View {
         case .done: return "No completed tasks"
         case .trash: return "Trash is empty"
         }
-    }
-
-    private func addTask(title: String) {
-        let task = TaskFactory.create(title: title)
-        save(task)
     }
 
     private func toggleDone(_ task: Task) {
@@ -232,6 +257,7 @@ struct TasksListView: View {
             duration: task.duration,
             project: task.project,
             tags: task.tags,
+            highPriority: task.highPriority,
             created: task.created,
             updated: task.updated,
             deletedAt: now,
@@ -239,7 +265,8 @@ struct TasksListView: View {
         )
         do {
             try appEnvironment.localStore.deleteTask(id: task.id, deletedTask: deleted)
-            Swift.Task { await appEnvironment.syncCoordinator.syncNow() }
+            reloadTasks()
+            appEnvironment.syncCoordinator.noteLocalChange()
         } catch {
             saveError = error.localizedDescription
         }
@@ -248,7 +275,8 @@ struct TasksListView: View {
     private func restoreFromTrash(_ deleted: DeletedTask) {
         do {
             try appEnvironment.localStore.restoreTask(deleted.asTask)
-            Swift.Task { await appEnvironment.syncCoordinator.syncNow() }
+            reloadTasks()
+            appEnvironment.syncCoordinator.noteLocalChange()
         } catch {
             saveError = error.localizedDescription
         }
@@ -257,7 +285,8 @@ struct TasksListView: View {
     private func purgeFromTrash(_ id: String) {
         do {
             try appEnvironment.localStore.purgeTask(id: id)
-            Swift.Task { await appEnvironment.syncCoordinator.syncNow() }
+            reloadTasks()
+            appEnvironment.syncCoordinator.noteLocalChange()
         } catch {
             saveError = error.localizedDescription
         }
@@ -266,7 +295,8 @@ struct TasksListView: View {
     private func save(_ task: Task) {
         do {
             try appEnvironment.localStore.saveTask(task)
-            Swift.Task { await appEnvironment.syncCoordinator.syncNow() }
+            reloadTasks()
+            appEnvironment.syncCoordinator.noteLocalChange()
         } catch {
             saveError = error.localizedDescription
         }

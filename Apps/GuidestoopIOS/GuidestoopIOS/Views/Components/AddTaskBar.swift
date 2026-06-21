@@ -1,20 +1,26 @@
 import SwiftUI
 
-struct QuickAddField: View {
-    let placeholder: String
-    var focusRequest: Binding<Bool> = .constant(false)
+struct AddTaskBar: View {
+    @Binding var text: String
     let onSubmit: (String) -> Void
 
-    @State private var text = ""
     @FocusState private var isFocused: Bool
 
     private var trimmedText: String {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var canSubmit: Bool {
+        !trimmedText.isEmpty
+    }
+
     var body: some View {
-        HStack(spacing: 8) {
-            TextField(placeholder, text: $text)
+        HStack(spacing: 12) {
+            Image(systemName: "plus")
+                .font(.body.weight(.medium))
+                .foregroundStyle(GuidestoopTheme.textSecondary)
+
+            TextField("New task", text: $text)
                 .font(GuidestoopTypography.body)
                 .focused($isFocused)
                 .submitLabel(.done)
@@ -23,24 +29,18 @@ struct QuickAddField: View {
             Button("Add", action: submit)
                 .font(GuidestoopTypography.meta.weight(.semibold))
                 .guidestoopProminentButton()
-                .disabled(trimmedText.isEmpty)
+                .disabled(!canSubmit)
         }
-        .onChange(of: focusRequest.wrappedValue) { _, requested in
-            guard requested else { return }
-            focusRequest.wrappedValue = false
-            DispatchQueue.main.async {
-                isFocused = true
-            }
-        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.bar)
     }
 
     private func submit() {
-        guard !trimmedText.isEmpty else { return }
+        guard canSubmit else { return }
         let title = trimmedText
         onSubmit(title)
         text = ""
-        DispatchQueue.main.async {
-            isFocused = true
-        }
+        isFocused = true
     }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct OnboardingView: View {
+    var initialError: String? = nil
     let onComplete: () -> Void
 
     @State private var isWorking = false
@@ -14,14 +15,15 @@ struct OnboardingView: View {
 
             Text("g")
                 .font(.system(size: 56, weight: .light, design: .serif))
-                .foregroundStyle(.primary)
+                .foregroundStyle(GuidestoopTheme.textPrimary)
 
             VStack(spacing: 8) {
                 Text("Guidestoop")
                     .font(.title2.weight(.semibold))
+                    .foregroundStyle(GuidestoopTheme.textPrimary)
                 Text("Your tasks live as markdown files in iCloud Drive.")
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(GuidestoopTheme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -35,7 +37,7 @@ struct OnboardingView: View {
                     Text("Use Default Folder")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .guidestoopProminentButton()
                 .disabled(isWorking)
 
                 Button {
@@ -44,7 +46,7 @@ struct OnboardingView: View {
                     Text("Choose Folder")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .guidestoopBorderedButton()
                 .disabled(isWorking)
 
                 if isWorking {
@@ -55,13 +57,19 @@ struct OnboardingView: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(GuidestoopTheme.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            if errorMessage == nil {
+                errorMessage = initialError
+            }
         }
         .fileImporter(
             isPresented: $showFolderPicker,
