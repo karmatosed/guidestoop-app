@@ -63,4 +63,17 @@ final class TaskFiltersTests: XCTestCase {
         XCTAssertEqual(TaskFilters.filterByTag(tasks, tag: "work").map(\.id), ["a"])
         XCTAssertEqual(TaskFilters.allTags(tasks), ["home", "urgent", "work"])
     }
+
+    func testDayTimelineTasks() {
+        let today = TaskFilters.localDateYmd()
+        let tasks = [
+            task(id: "focus", status: .focus),
+            task(id: "scheduled", status: .scheduled, scheduled: "\(today)T10:00:00Z"),
+            task(id: "done", status: .done, scheduled: "\(today)T10:00:00Z"),
+            task(id: "other-day", status: .scheduled, scheduled: "2026-05-22T10:00:00Z"),
+        ]
+        let result = TaskFilters.dayTimelineTasks(tasks, dateYmd: today)
+        XCTAssertEqual(result.scheduled.map(\.id), ["scheduled"])
+        XCTAssertEqual(result.focus.map(\.id), ["focus"])
+    }
 }

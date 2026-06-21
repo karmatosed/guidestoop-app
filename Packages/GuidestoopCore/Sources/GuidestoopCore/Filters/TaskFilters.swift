@@ -71,4 +71,20 @@ public enum TaskFilters {
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", components.year!, components.month!, components.day!)
     }
+
+    public static func dayTimelineTasks(
+        _ tasks: [Task],
+        dateYmd: String,
+        calendar: Calendar = .current
+    ) -> (scheduled: [Task], focus: [Task]) {
+        let scheduled = ScheduleLogic.tasksDueToday(tasks, dateYmd: dateYmd, calendar: calendar)
+            .filter { $0.status != .done && $0.scheduled != nil }
+        let focus: [Task]
+        if dateYmd == localDateYmd(calendar: calendar) {
+            focus = tasks.filter { $0.status == .focus }
+        } else {
+            focus = []
+        }
+        return (scheduled, focus)
+    }
 }
