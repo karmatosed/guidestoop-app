@@ -41,7 +41,7 @@ private struct RootView: View {
                 appSession.finishOnboarding()
             }
         case .ready(let environment):
-            ContentView()
+            AppShellView()
                 .environmentObject(environment)
         }
     }
