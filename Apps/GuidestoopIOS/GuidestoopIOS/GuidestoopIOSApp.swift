@@ -43,6 +43,7 @@ private struct RootView: View {
         case .ready(let environment):
             AppShellView()
                 .environmentObject(environment)
+                .environmentObject(appSession)
         }
     }
 }

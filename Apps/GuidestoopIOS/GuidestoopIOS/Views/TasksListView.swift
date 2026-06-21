@@ -5,18 +5,22 @@ import GuidestoopCore
 struct TasksListView: View {
     @EnvironmentObject private var appEnvironment: AppEnvironment
     @Binding var isSearchPresented: Bool
+    @Binding var selectedTab: TaskListTab
 
     @Query(sort: \CachedTask.updated, order: .reverse) private var cachedTasks: [CachedTask]
     @Query(sort: \CachedDeletedTask.deletedAt, order: .reverse) private var cachedDeletedTasks: [CachedDeletedTask]
 
-    @State private var selectedTab: TaskListTab = .all
     @State private var searchQuery = ""
     @State private var selectedTag: String?
     @State private var selectedTask: Task?
     @State private var saveError: String?
 
-    init(isSearchPresented: Binding<Bool> = .constant(false)) {
+    init(
+        isSearchPresented: Binding<Bool> = .constant(false),
+        selectedTab: Binding<TaskListTab> = .constant(.all)
+    ) {
         _isSearchPresented = isSearchPresented
+        _selectedTab = selectedTab
     }
 
     private var allTasks: [Task] {

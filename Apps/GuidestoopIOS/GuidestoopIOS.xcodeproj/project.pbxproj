@@ -33,6 +33,8 @@
 		B100000000000000000000F9 /* TaskDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A9 /* TaskDetailView.swift */; };
 		B100000000000000000000FA /* KanbanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AA /* KanbanView.swift */; };
 		B100000000000000000000FB /* DayTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AB /* DayTimelineView.swift */; };
+		B100000000000000000000FC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AC /* SettingsView.swift */; };
+		B100000000000000000000FD /* ConflictResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AD /* ConflictResolution.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +65,8 @@
 		B100000000000000000000A9 /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
 		B100000000000000000000AA /* KanbanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanView.swift; sourceTree = "<group>"; };
 		B100000000000000000000AB /* DayTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayTimelineView.swift; sourceTree = "<group>"; };
+		B100000000000000000000AC /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B100000000000000000000AD /* ConflictResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolution.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -129,6 +133,7 @@
 				B1000000000000000000001B /* SyncCoordinator.swift */,
 				B1000000000000000000001C /* AppEnvironment.swift */,
 				B1000000000000000000001E /* FolderBookmarkStore.swift */,
+				B100000000000000000000AD /* ConflictResolution.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -156,6 +161,7 @@
 				B100000000000000000000A5 /* TasksListView.swift */,
 				B100000000000000000000AA /* KanbanView.swift */,
 				B100000000000000000000AB /* DayTimelineView.swift */,
+				B100000000000000000000AC /* SettingsView.swift */,
 				B100000000000000000000A9 /* TaskDetailView.swift */,
 				B10000000000000000000048 /* Components */,
 			);
@@ -273,6 +279,8 @@
 				B100000000000000000000F9 /* TaskDetailView.swift in Sources */,
 				B100000000000000000000FA /* KanbanView.swift in Sources */,
 				B100000000000000000000FB /* DayTimelineView.swift in Sources */,
+				B100000000000000000000FC /* SettingsView.swift in Sources */,
+				B100000000000000000000FD /* ConflictResolution.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

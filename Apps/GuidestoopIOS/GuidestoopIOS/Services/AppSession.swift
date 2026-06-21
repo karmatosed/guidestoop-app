@@ -22,7 +22,13 @@ final class AppSession: ObservableObject {
     }
 
     func finishOnboarding() {
-        guard let environment = try? AppEnvironment(modelContext: modelContainer.mainContext) else {
+        reloadEnvironment()
+    }
+
+    func reloadEnvironment() {
+        guard FolderBookmarkStore.isConfigured,
+              let environment = try? AppEnvironment(modelContext: modelContainer.mainContext) else {
+            phase = .onboarding
             return
         }
         phase = .ready(environment)

@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GuidestoopCore
 
 private enum AppTab: String, CaseIterable, Identifiable {
     case list
@@ -30,13 +31,23 @@ private enum AppTab: String, CaseIterable, Identifiable {
 
 struct AppShellView: View {
     @EnvironmentObject private var appEnvironment: AppEnvironment
+    @AppStorage("guidestoop.appearance") private var appearanceRaw = AppearancePreference.system.rawValue
+
     @State private var selectedTab: AppTab = .list
+    @State private var listFilterTab: TaskListTab = .all
     @State private var isListSearchPresented = false
+    @State private var showConflicts = false
+
+    private var appearance: AppearancePreference {
+        AppearancePreference(rawValue: appearanceRaw) ?? .system
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             if conflictCount > 0 {
-                ConflictBannerView(conflictCount: conflictCount)
+                ConflictBannerView(conflictCount: conflictCount) {
+                    showConflicts = true
+                }
             }
 
             headerBar
@@ -48,16 +59,18 @@ struct AppShellView: View {
         }
         .background(GuidestoopTheme.background)
         .foregroundStyle(GuidestoopTheme.textPrimary)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(appearance.colorScheme)
         .task {
             await appEnvironment.syncCoordinator.syncNow()
+        }
+        .sheet(isPresented: $showConflicts) {
+            ConflictsListView()
+                .environmentObject(appEnvironment)
         }
     }
 
     private var conflictCount: Int {
-        appEnvironment.syncCoordinator.conflictPaths
-            .filter { !$0.hasPrefix("sync-error:") && $0.contains(".conflict.") }
-            .count
+        appEnvironment.syncCoordinator.taskConflictPaths.count
     }
 
     private var headerBar: some View {
@@ -98,14 +111,22 @@ struct AppShellView: View {
     private var tabContent: some View {
         switch selectedTab {
         case .list:
-            TasksListView(isSearchPresented: $isListSearchPresented)
+            TasksListView(
+                isSearchPresented: $isListSearchPresented,
+                selectedTab: $listFilterTab
+            )
         case .kanban:
             KanbanView()
         case .day:
             DayTimelineView()
         case .settings:
-            ShellSettingsPlaceholder(environment: appEnvironment)
+            SettingsView(onOpenTrash: openTrash)
         }
+    }
+
+    private func openTrash() {
+        selectedTab = .list
+        listFilterTab = .trash
     }
 
     private var tabBar: some View {
@@ -129,62 +150,6 @@ struct AppShellView: View {
         .padding(.top, 8)
         .padding(.bottom, 4)
         .background(GuidestoopTheme.surface)
-    }
-}
-
-private struct ShellPlaceholderView: View {
-    let title: String
-    let subtitle: String
-    var taskCount: Int?
-
-    var body: some View {
-        VStack(spacing: 12) {
-            Spacer()
-            Text(title)
-                .font(.title2.weight(.semibold))
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(GuidestoopTheme.textSecondary)
-            if let taskCount {
-                Text("\(taskCount) tasks synced")
-                    .font(.caption)
-                    .foregroundStyle(GuidestoopTheme.textSecondary)
-                    .padding(.top, 4)
-            }
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-private struct ShellSettingsPlaceholder: View {
-    @ObservedObject var environment: AppEnvironment
-
-    var body: some View {
-        List {
-            Section("Storage") {
-                LabeledContent("Provider", value: "iCloud Drive")
-                Text(environment.folderURL.path)
-                    .font(.caption)
-                    .foregroundStyle(GuidestoopTheme.textSecondary)
-            }
-
-            Section("Sync") {
-                Button("Sync now") {
-                    Swift.Task { await environment.syncCoordinator.syncNow() }
-                }
-                if let lastSynced = environment.syncCoordinator.lastSyncedAt {
-                    LabeledContent("Last synced") {
-                        Text(lastSynced.formatted(date: .abbreviated, time: .shortened))
-                    }
-                }
-                if environment.syncCoordinator.outboxCount > 0 {
-                    LabeledContent("Pending", value: "\(environment.syncCoordinator.outboxCount)")
-                }
-            }
-        }
-        .scrollContentBackground(.hidden)
-        .background(GuidestoopTheme.background)
     }
 }
 

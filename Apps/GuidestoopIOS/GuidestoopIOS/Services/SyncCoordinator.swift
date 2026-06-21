@@ -11,11 +11,22 @@ final class SyncCoordinator: ObservableObject {
 
     private let localStore: LocalStore
     private let folderURL: URL
+    private var folderWatcher: ICloudFolderWatcher?
 
     init(localStore: LocalStore, folderURL: URL) {
         self.localStore = localStore
         self.folderURL = folderURL
         self.outboxCount = (try? localStore.pendingOutboxCount()) ?? 0
+        startWatchingFolder()
+    }
+
+    private func startWatchingFolder() {
+        folderWatcher = ICloudFolderWatcher(folderURL: folderURL) { [weak self] in
+            guard let self else { return }
+            Swift.Task { @MainActor in
+                await self.syncNow()
+            }
+        }
     }
 
     func syncNow() async {
@@ -49,6 +60,73 @@ final class SyncCoordinator: ObservableObject {
             conflictPaths = ["sync-error:\(error.localizedDescription)"]
             outboxCount = (try? localStore.pendingOutboxCount()) ?? 0
         }
+    }
+
+    var taskConflictPaths: [String] {
+        conflictPaths.filter { $0.contains(".conflict.") && !$0.hasPrefix("sync-error:") }
+    }
+
+    func loadConflict(at conflictPath: String) throws -> ConflictInfo {
+        guard let taskId = ConflictPathParser.taskId(fromConflictPath: conflictPath) else {
+            throw StorageError.readFailed("Invalid conflict path")
+        }
+        let adapter = ICloudAdapter(rootURL: folderURL)
+        let localRaw = try runBlockingStorage {
+            try await adapter.read(path: conflictPath)
+        }
+        let remoteRaw = try runBlockingStorage {
+            try await adapter.read(path: SyncPaths.taskPath(id: taskId))
+        }
+        return ConflictInfo(
+            conflictPath: conflictPath,
+            taskId: taskId,
+            localTask: try TaskMarkdown.parse(localRaw),
+            remoteTask: try TaskMarkdown.parse(remoteRaw)
+        )
+    }
+
+    func resolveConflict(at conflictPath: String, keepLocal: Bool) async throws {
+        guard let taskId = ConflictPathParser.taskId(fromConflictPath: conflictPath) else {
+            throw StorageError.readFailed("Invalid conflict path")
+        }
+        let adapter = ICloudAdapter(rootURL: folderURL)
+        if keepLocal {
+            let localRaw = try runBlockingStorage {
+                try await adapter.read(path: conflictPath)
+            }
+            let task = try TaskMarkdown.parse(localRaw)
+            var updated = task
+            updated.updated = ISO8601DateFormatter().string(from: Date())
+            let content = try TaskMarkdown.serialize(updated)
+            try runBlockingStorage {
+                try await adapter.write(path: SyncPaths.taskPath(id: taskId), content: content)
+            }
+            try localStore.saveTask(updated)
+        }
+        try runBlockingStorage {
+            try await adapter.delete(path: conflictPath)
+        }
+        await syncNow()
+    }
+
+    private func runBlockingStorage<T: Sendable>(_ operation: @escaping @Sendable () async throws -> T) throws -> T {
+        let semaphore = DispatchSemaphore(value: 0)
+        var result: Result<T, Error>?
+
+        Swift.Task.detached(priority: Swift.TaskPriority.userInitiated) {
+            defer { semaphore.signal() }
+            do {
+                result = .success(try await operation())
+            } catch {
+                result = .failure(error)
+            }
+        }
+
+        semaphore.wait()
+        guard let result else {
+            throw StorageError.readFailed("No result returned from storage operation")
+        }
+        return try result.get()
     }
 }
 

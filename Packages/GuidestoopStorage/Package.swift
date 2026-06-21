@@ -15,5 +15,9 @@ let package = Package(
             name: "GuidestoopStorage",
             dependencies: ["GuidestoopCore"]
         ),
+        .testTarget(
+            name: "GuidestoopStorageTests",
+            dependencies: ["GuidestoopStorage"]
+        ),
     ]
 )
