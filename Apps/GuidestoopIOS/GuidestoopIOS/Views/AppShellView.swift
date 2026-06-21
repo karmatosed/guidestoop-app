@@ -100,9 +100,9 @@ struct AppShellView: View {
         case .list:
             TasksListView(isSearchPresented: $isListSearchPresented)
         case .kanban:
-            ShellPlaceholderView(title: "Kanban", subtitle: "Columns: inbox → done")
+            KanbanView()
         case .day:
-            ShellPlaceholderView(title: "Day", subtitle: "Timeline for scheduled tasks")
+            DayTimelineView()
         case .settings:
             ShellSettingsPlaceholder(environment: appEnvironment)
         }
