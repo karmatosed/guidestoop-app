@@ -1,6 +1,18 @@
 import Foundation
 import GuidestoopCore
 
+public struct RemoteFileMetadata: Sendable {
+    public let path: String
+    public let modifiedAt: Date?
+    public let size: Int?
+
+    public init(path: String, modifiedAt: Date? = nil, size: Int? = nil) {
+        self.path = path
+        self.modifiedAt = modifiedAt
+        self.size = size
+    }
+}
+
 public struct RemoteFile: Sendable {
     public let path: String
     public let content: String
@@ -13,15 +25,7 @@ public struct RemoteFile: Sendable {
     }
 }
 
-public struct FolderMeta: Codable, Sendable {
-    public var schemaVersion: Int
-    public var lastSyncedAt: String?
-
-    public init(schemaVersion: Int = 1, lastSyncedAt: String? = nil) {
-        self.schemaVersion = schemaVersion
-        self.lastSyncedAt = lastSyncedAt
-    }
-}
+public typealias FolderMeta = SyncMeta
 
 public enum StorageError: Error, Sendable {
     case notImplemented(String)
@@ -32,10 +36,11 @@ public enum StorageError: Error, Sendable {
 
 public protocol StorageAdapter: Sendable {
     func ensureFolderStructure() async throws
+    func listFileMetadata() async throws -> [RemoteFileMetadata]
     func listFiles() async throws -> [RemoteFile]
     func read(path: String) async throws -> String
     func write(path: String, content: String) async throws
     func delete(path: String) async throws
-    func readMeta() async throws -> FolderMeta
-    func writeMeta(_ meta: FolderMeta) async throws
+    func readMeta() async throws -> SyncMeta
+    func writeMeta(_ meta: SyncMeta) async throws
 }

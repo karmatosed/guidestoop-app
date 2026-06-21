@@ -1,4 +1,5 @@
 import Foundation
+import GuidestoopCore
 
 /// Phase 2 stub — GitHub-backed storage is not yet implemented.
 public struct GitHubAdapter: StorageAdapter {
@@ -7,6 +8,10 @@ public struct GitHubAdapter: StorageAdapter {
     public init() {}
 
     public func ensureFolderStructure() async throws {
+        throw StorageError.notImplemented(Self.message)
+    }
+
+    public func listFileMetadata() async throws -> [RemoteFileMetadata] {
         throw StorageError.notImplemented(Self.message)
     }
 
@@ -26,11 +31,11 @@ public struct GitHubAdapter: StorageAdapter {
         throw StorageError.notImplemented(Self.message)
     }
 
-    public func readMeta() async throws -> FolderMeta {
+    public func readMeta() async throws -> SyncMeta {
         throw StorageError.notImplemented(Self.message)
     }
 
-    public func writeMeta(_ meta: FolderMeta) async throws {
+    public func writeMeta(_ meta: SyncMeta) async throws {
         throw StorageError.notImplemented(Self.message)
     }
 }

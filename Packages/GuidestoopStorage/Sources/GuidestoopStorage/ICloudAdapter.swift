@@ -1,4 +1,5 @@
 import Foundation
+import GuidestoopCore
 
 public final class ICloudAdapter: StorageAdapter, @unchecked Sendable {
     private let rootURL: URL
@@ -23,7 +24,7 @@ public final class ICloudAdapter: StorageAdapter, @unchecked Sendable {
             try fm.createDirectory(at: url, withIntermediateDirectories: true)
         }
         if !fm.fileExists(atPath: rootURL.appendingPathComponent(StoragePaths.metaFile).path) {
-            try await writeMeta(FolderMeta())
+            try await writeMeta(SyncMeta())
         }
     }
 
@@ -37,16 +38,32 @@ public final class ICloudAdapter: StorageAdapter, @unchecked Sendable {
         return "/" + String(filePath.dropFirst(rootPath.count + 1))
     }
 
-    public func listFiles() async throws -> [RemoteFile] {
-        var results: [RemoteFile] = []
+    public func listFileMetadata() async throws -> [RemoteFileMetadata] {
+        var results: [RemoteFileMetadata] = []
         let root = rootURL.standardizedFileURL
-        let enumerator = fm.enumerator(at: root, includingPropertiesForKeys: [.contentModificationDateKey])
+        let enumerator = fm.enumerator(
+            at: root,
+            includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey]
+        )
         while let url = enumerator?.nextObject() as? URL {
             guard url.pathExtension == "md" else { continue }
             guard let rel = relativePath(for: url) else { continue }
-            let content = try await read(path: rel)
-            let mod = try url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
-            results.append(RemoteFile(path: rel, content: content, modifiedAt: mod))
+            let values = try url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
+            results.append(RemoteFileMetadata(
+                path: rel,
+                modifiedAt: values.contentModificationDate,
+                size: values.fileSize
+            ))
+        }
+        return results
+    }
+
+    public func listFiles() async throws -> [RemoteFile] {
+        let metadata = try await listFileMetadata()
+        var results: [RemoteFile] = []
+        for entry in metadata {
+            let content = try await read(path: entry.path)
+            results.append(RemoteFile(path: entry.path, content: content, modifiedAt: entry.modifiedAt))
         }
         return results
     }
@@ -87,12 +104,12 @@ public final class ICloudAdapter: StorageAdapter, @unchecked Sendable {
         }
     }
 
-    public func readMeta() async throws -> FolderMeta {
+    public func readMeta() async throws -> SyncMeta {
         let raw = try await read(path: StoragePaths.metaFile)
-        return try JSONDecoder().decode(FolderMeta.self, from: Data(raw.utf8))
+        return try JSONDecoder().decode(SyncMeta.self, from: Data(raw.utf8))
     }
 
-    public func writeMeta(_ meta: FolderMeta) async throws {
+    public func writeMeta(_ meta: SyncMeta) async throws {
         let data = try JSONEncoder().encode(meta)
         try await write(path: StoragePaths.metaFile, content: String(decoding: data, as: UTF8.self))
     }

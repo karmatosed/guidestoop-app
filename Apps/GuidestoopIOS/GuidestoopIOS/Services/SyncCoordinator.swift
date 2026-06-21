@@ -65,12 +65,18 @@ private final class SyncICloudAdapter: SyncStorageAdapter, @unchecked Sendable {
         }
     }
 
-    func listFiles() throws -> [SyncRemoteFile] {
-        let files = try runBlocking {
-            try await self.adapter.listFiles()
+    func listFileMetadata() throws -> [SyncFileMetadata] {
+        let entries = try runBlocking {
+            try await self.adapter.listFileMetadata()
         }
-        return files.map { file in
-            SyncRemoteFile(path: file.path, content: file.content)
+        return entries.map { entry in
+            SyncFileMetadata(path: entry.path, modifiedAt: entry.modifiedAt, size: entry.size)
+        }
+    }
+
+    func read(path: String) throws -> String {
+        try runBlocking {
+            try await self.adapter.read(path: path)
         }
     }
 
@@ -83,6 +89,18 @@ private final class SyncICloudAdapter: SyncStorageAdapter, @unchecked Sendable {
     func delete(path: String) throws {
         try runBlocking {
             try await self.adapter.delete(path: path)
+        }
+    }
+
+    func readMeta() throws -> SyncMeta {
+        try runBlocking {
+            try await self.adapter.readMeta()
+        }
+    }
+
+    func writeMeta(_ meta: SyncMeta) throws {
+        try runBlocking {
+            try await self.adapter.writeMeta(meta)
         }
     }
 
