@@ -52,6 +52,7 @@ struct TasksListView: View {
         .searchable(text: $searchQuery, isPresented: $isSearchPresented, prompt: "Search tasks")
         .sheet(item: $selectedTask) { task in
             TaskDetailView(task: task)
+                .environmentObject(appEnvironment)
         }
         .alert("Could not save", isPresented: Binding(
             get: { saveError != nil },
