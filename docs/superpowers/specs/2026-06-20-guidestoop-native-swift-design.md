@@ -226,7 +226,39 @@ Reference implementation: `packages/task-core/src/schema.ts`
 
 ### Manual Sync
 
-Settings exposes manual sync button + "last synced" timestamp. Sync triggers full folder scan + outbox flush. Offline outbox indicator when pending ops exist.
+Settings exposes manual sync button + "last synced" timestamp. Sync triggers incremental folder scan + outbox flush. Offline outbox indicator when pending ops exist.
+
+---
+
+## Sync Performance & Incremental Sync
+
+The UI reads from SwiftData cache, not the folder. Sync runs in the background and should scale to thousands of tasks without blocking the app.
+
+### Strategy
+
+1. **Metadata-first listing** — enumerate paths + filesystem modification dates without reading file contents.
+2. **Selective reads** — read and parse a `.md` file only when it is new, filesystem-modified since last manifest entry, or targeted by outbox.
+3. **File manifest in `guidestoop.json`** — disposable cache of last-seen `updated` + `modifiedAt` per path.
+4. **Unchanged files** — keep local SwiftData copy; do not re-read from disk.
+5. **Deletion reconciliation** — compare remote path listing vs cache.
+
+### `guidestoop.json` manifest (extended)
+
+```json
+{
+  "schemaVersion": 1,
+  "lastSyncedAt": "2026-06-21T10:00:00.000Z",
+  "files": {
+    "/tasks/{uuid}.md": {
+      "updated": "2026-06-20T12:00:00.000Z",
+      "modifiedAt": "2026-06-20T12:00:00.000Z",
+      "size": 412
+    }
+  }
+}
+```
+
+Dropbox uses API cursors; iCloud has no delta API — the manifest substitutes for cursor-based incremental sync.
 
 ---
 
@@ -237,12 +269,13 @@ Port logic from `packages/task-core/src/storage/markdown-storage-adapter.ts`.
 ### Sync Cycle
 
 1. Flush outbox (pending save / delete / restore / purge ops → write files).
-2. Scan folder for all `.md` files + conflict copies.
-3. Merge local cache vs. remote files by `updated` timestamp.
-4. On conflict → write `{uuid}.conflict.{timestamp}.md`, surface banner in UI.
-5. Sync deleted folder separately; remove active copies for trashed IDs.
-6. Auto-purge trash older than 30 days.
-7. Replace local cache with merged result.
+2. List folder **metadata** (path + modification date, no content reads).
+3. Read and parse only changed or new `.md` files (compare manifest + mod dates).
+4. Merge local cache vs. remote by `updated` timestamp.
+5. On conflict → write `{uuid}.conflict.{timestamp}.md`, surface banner in UI.
+6. Sync deleted folder separately; remove active copies for trashed IDs.
+7. Auto-purge trash older than 30 days.
+8. Update manifest in `guidestoop.json`; replace local cache with merged result.
 
 ### Outbox Pattern
 
